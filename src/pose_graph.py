@@ -25,5 +25,4 @@ class PoseGraph():
 
 	def add_constraint(self, i, j, transformation):
 		# Adds the transformation from i to j into the graph object
-		# TODO: Make sure this is by reference!
 		self.graph.add_edge(i, j, object=transformation)

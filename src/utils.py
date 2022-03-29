@@ -1,3 +1,5 @@
+import numpy as np
+
 def odom_change_to_mat(delta):
 	# Given a change in position delta, as a 3-tuple (dx, dy, dtheta),
 	# return a 3x3 transformation matrix in SE(2) that encodes the transforamtion
