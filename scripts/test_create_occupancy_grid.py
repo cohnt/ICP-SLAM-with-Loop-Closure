@@ -33,3 +33,10 @@ og = produce_occupancy_grid.produce_occupancy_grid(poses, lidar_points, 0.05, kH
 fig, ax = plt.subplots()
 visualization.draw_occupancy_grid(ax, og, cell_size=0.05, origin_location=np.array([0, 0]))
 plt.show()
+
+fig, ax = plt.subplots()
+visualization.draw_occupancy_grid(ax, produce_occupancy_grid.grid_mle(og, unknown_empty=True), cell_size=0.05, origin_location=np.array([0, 0]))
+plt.show()
+fig, ax = plt.subplots()
+visualization.draw_occupancy_grid(ax, produce_occupancy_grid.grid_mle(og, unknown_empty=False), cell_size=0.05, origin_location=np.array([0, 0]))
+plt.show()

@@ -85,3 +85,12 @@ def global_position_to_grid_cell(pos, min_x, min_y, cell_width):
 	horizontal = np.floor((pos[0] - min_x) / cell_width).astype(int)
 	vertical = np.floor((pos[1] - min_y) / cell_width).astype(int)
 	return (vertical, horizontal)
+
+def grid_mle(grid, unknown_empty=True):
+	# Rounds every grid cell to either 127 or -128. If unknown_empty is True,
+	# unkown points (i.e. log-likelihood 0) are set to -128 (empty). Otherwise,
+	# they are set to 127 (occupied).
+	grid[grid > 0] = 127
+	grid[grid < 0] = -128
+	grid[grid == 0] = -128 if unknown_empty else 127
+	return grid
