@@ -14,7 +14,7 @@ def draw_occupancy_grid(ax, occupancy_grid, cell_size, origin_location):
 	right = origin_location[0] + width - half_cell_size
 	bottom = origin_location[1] - half_cell_size
 	top = origin_location[1] + height - half_cell_size
-	ax.imshow(occupancy_grid, origin="lower", extent=(left, right, bottom, top), cmap=plt.get_cmap("gist_gray"), vmin=-128, vmax=127)
+	ax.imshow(occupancy_grid, origin="lower", extent=(left, right, bottom, top), cmap=plt.get_cmap("gist_yarg"), vmin=-128, vmax=127)
 
 def draw_path(ax, path):
 	# Draw the robot's path
