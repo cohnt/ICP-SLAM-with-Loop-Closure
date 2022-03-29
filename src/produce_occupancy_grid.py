@@ -94,3 +94,13 @@ def grid_mle(grid, unknown_empty=True):
 	grid[grid < 0] = -128
 	grid[grid == 0] = -128 if unknown_empty else 127
 	return grid
+
+def save_grid(grid, fname, cell_width):
+	# Saves the grid into a map file, following the EECS 467 convention
+	f = open(fname, "w")
+	f.write("%d %d %d %d %f\n" % (0, 0, grid.shape[1], grid.shape[0], cell_width))
+	for i in range(grid.shape[0]):
+		for j in range(grid.shape[1]):
+			f.write("%d " % grid[i][j])
+		f.write("\n")
+	f.close()

@@ -40,3 +40,5 @@ plt.show()
 fig, ax = plt.subplots()
 visualization.draw_occupancy_grid(ax, produce_occupancy_grid.grid_mle(og, unknown_empty=False), cell_size=0.05, origin_location=np.array([0, 0]))
 plt.show()
+
+# produce_occupancy_grid.save_grid(og, "test_grid.map", 0.05)
