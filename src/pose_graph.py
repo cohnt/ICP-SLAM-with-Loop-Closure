@@ -20,7 +20,7 @@ class PoseGraph():
 		# transformations should be an (n-1, 3, 3) numpy array, where the ith entry is the SE(3) matrix
 		# of the transformation from pose i to pose i+1. Returns a pose graph.
 		self.graph = nx.DiGraph()
-		for i in range(0, transformations.size[0]):
+		for i in range(0, transformations.shape[0]):
 			self.graph.add_edge(i, i+1, object=transformations[i])
 
 	def add_constraint(self, i, j, transformation):
