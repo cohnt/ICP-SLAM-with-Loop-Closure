@@ -10,8 +10,8 @@ import src.utils as utils
 def produce_occupancy_grid(poses, lidar_points, cell_width, kHitOdds=3, kMissOdds=1):
 	# Produce an occupancy grid from range data
 	# poses should be an (n, 3) numpy array of poses (x, y, theta)
-	# lidar_points should be an (n, m, 2) numpy array of point cloud
-	#    lidar data -- each m-by-2 entry of the length-n list is in
+	# lidar_points should be an length-n array of (m_i, 2) numpy arrays of point cloud
+	#    lidar data -- each m_i-by-2 entry of the length-n list is in
 	#    its own local coordinate frame (i.e. the robot center is at
 	#    0,0, and the forward direction is positive x)
 	# containing the complete map (with each cell being cell_width)
@@ -19,12 +19,12 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, kHitOdds=3, kMissOdd
 	# -128 and 127, with dtype np.int8
 
 	n = poses.shape[0]
-	m = lidar_points.shape[1]
+	ms = [len(lidar_points[i]) for i in range(len(lidar_points))]
 
 	global_points = np.zeros(lidar_points.shape)
 	for i in range(n):
 		pose_tf = utils.odom_change_to_mat(poses[i])
-		for j in range(m):
+		for j in range(ms[i]):
 			point_homogeneous = np.array([[lidar_points[i,j,0]], [lidar_points[i,j,1]], [1]])
 			global_points[i,j] = (pose_tf @ point_homogeneous).flatten()[:2]
 
@@ -41,7 +41,7 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, kHitOdds=3, kMissOdd
 	occupancy_grid = np.zeros((height_in_cells, width_in_cells), dtype=np.int8)
 
 	for i in range(n):
-		for j in range(m):
+		for j in range(ms[i]):
 			y0, x0 = global_position_to_grid_cell(poses[i,:2], min_x, min_y, cell_width)
 			y1, x1 = global_position_to_grid_cell(global_points[i,j], min_x, min_y, cell_width)
 			dx = np.abs(x1 - x0).astype(int)
