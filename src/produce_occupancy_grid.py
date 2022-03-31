@@ -94,6 +94,69 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, min_width=0, min_hei
 
 	return occupancy_grid, (min_x, min_y)
 
+def update_occupancy_grid(occupancy_grid, poses, lidar_points, cell_width, min_x, min_y, kHitOdds=3, kMissOdds=1):
+	# Update an existing occupancy grid from new range data
+	# poses should be an (n, 3) numpy array of poses (x, y, theta)
+	# lidar_points should be an length-n array of (m_i, 2) numpy arrays of point cloud
+	#    lidar data -- each m_i-by-2 entry of the length-n list is in
+	#    its own local coordinate frame (i.e. the robot center is at
+	#    0,0, and the forward direction is positive x)
+	# containing the complete map (with each cell being cell_width)
+	# The occupancy grid will be a (h, w) numpy array of integers between
+	# -128 and 127, with dtype np.int8
+	n = poses.shape[0]
+	ms = [len(lidar_points[i]) for i in range(len(lidar_points))]
+
+	global_points = []
+	for i in range(n):
+		pose_tf = utils.odom_change_to_mat(poses[i])
+		global_points.append(np.zeros(lidar_points[i].shape))
+		for j in range(ms[i]):
+			point_homogeneous = np.array([[lidar_points[i][j,0]], [lidar_points[i][j,1]], [1]])
+			global_points[i][j] = (pose_tf @ point_homogeneous).flatten()[:2]
+
+	width_in_cells = occupancy_grid.shape[1]
+	height_in_cells = occupancy_grid.shape[0]
+
+	for i in range(n):
+		for j in range(ms[i]):
+			y0, x0 = global_position_to_grid_cell(poses[i,:2], min_x, min_y, cell_width)
+			y1, x1 = global_position_to_grid_cell(global_points[i][j], min_x, min_y, cell_width)
+			dx = np.abs(x1 - x0).astype(int)
+			dy = -np.abs(y1 - y0).astype(int)
+			sx = 1 if x1 > x0 else -1
+			sy = 1 if y1 > y0 else -1
+			error = dx + dy
+
+			while True:
+				if x0 < 0 or x0 >= width_in_cells or y0 < 0 or y0 >= height_in_cells:
+					break
+
+				if -128 - occupancy_grid[y0, x0] < -kMissOdds:
+					occupancy_grid[y0, x0] = occupancy_grid[y0, x0] - kMissOdds
+				else:
+					occupancy_grid[y0, x0] = -128
+
+				e2 = error * 2
+				if e2 >= dy:
+					if x0 == x1:
+						break
+					error = error + dy
+					x0 += sx
+				if e2 <= dx:
+					if y0 == y1:
+						break
+					error = error + dx
+					y0 += sy
+
+			if x0 >= 0 and x0 < width_in_cells and y0 >= 0 and y0 < height_in_cells:
+				if 127 - occupancy_grid[y0, x0] > kHitOdds:
+					occupancy_grid[y0, x0] = occupancy_grid[y0, x0] + kHitOdds
+				else:
+					occupancy_grid[y0, x0] = 127
+
+	return occupancy_grid
+
 def global_position_to_grid_cell(pos, min_x, min_y, cell_width):
 	# Given an (x, y) position pos, as well as various information about
 	# the occupancy grid, return the grid cell index (row, column)
