@@ -39,8 +39,10 @@ def get_point_cloud(ranges, thetas):
 
 
 def get_all_lcm_data(data_folder_name):
-	odometry = np.empty((0, 4), dtype=float)
+	odometry = np.empty((0, 3), dtype=float)
+	odometry_timestamps = np.empty(0, dtype=float)
 	point_cloud = []
+	point_cloud_timestamps = np.empty(0, dtype=float)
 
 	log_fname = ""
 	for file in os.listdir(data_folder_name):
@@ -51,11 +53,25 @@ def get_all_lcm_data(data_folder_name):
 	for event in log:
 		if event.channel == "ODOMETRY":
 			msg = odometry_t.decode(event.data)
-			odometry = np.append(odometry, np.array([[msg.utime, msg.x, msg.y, msg.theta]]), axis=0)
+			odometry = np.append(odometry, np.array([[msg.x, msg.y, msg.theta]]), axis=0)
+			odometry_timestamps = np.append(odometry_timestamps, msg.utime)
 		if event.channel == "LIDAR":
 			msg = lidar_t.decode(event.data)
 			point_cloud.append(get_point_cloud(msg.ranges, msg.thetas))
-	return odometry, point_cloud
+			point_cloud_timestamps = np.append(point_cloud_timestamps, msg.utime)
+	return odometry, odometry_timestamps, point_cloud, point_cloud_timestamps
+
+
+def align_data(odometry, odometry_timestamps, point_clouds, point_cloud_timestamps, images, image_timestamps):
+	final_odometry = np.empty((0, 3), dtype=float)
+	final_point_clooud = np.empty((0, 1000, 2), dtype=float)
+	for i in range(images.shape[0]):
+		time = image_timestamps[i]
+		odo_idx = np.searchsorted(odometry_timestamps, time)
+		point_idx = np.searchsorted(point_cloud_timestamps, time)
+		final_odometry = np.append(final_odometry, odometry[odo_idx])
+		final_point_clooud = np.append(final_point_clooud, point_clouds[point_idx])
+	return final_odometry, final_point_clooud, images
 		
 
 def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=True):
@@ -69,14 +85,16 @@ def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=
 	# n is the number of camera images, m is the number of ranges returned by the LIDAR sensor,
 	# and w, h are the dimensions of the image
 
-	odometry, point_clouds = get_all_lcm_data(data_folder_name)
-	print(odometry.shape)
-	print(len(point_clouds))
-	print(point_clouds[0].shape)
+	# TODO: Check timestamps and make sure they are on the same scale
+	# TODO: Use start and stop time
 
-	imgs, timestamps = get_images(data_folder_name)
-	print(imgs.shape)
-	print(timestamps.shape)
+	odometry, odometry_timestamps, point_clouds, point_cloud_timestamps = get_all_lcm_data(data_folder_name)
+	if load_images:
+		images, image_timestamps = get_images(data_folder_name)
+	else:
+		images, image_timestamps = None, None
+		
+	return align_data(odometry, odometry_timestamps, point_clouds, point_cloud_timestamps, images, image_timestamps)
 
 
 def run_test():
