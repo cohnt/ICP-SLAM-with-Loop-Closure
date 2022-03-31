@@ -51,40 +51,7 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, min_width=0, min_hei
 
 	for i in range(n):
 		for j in range(ms[i]):
-			y0, x0 = global_position_to_grid_cell(poses[i,:2], min_x, min_y, cell_width)
-			y1, x1 = global_position_to_grid_cell(global_points[i][j], min_x, min_y, cell_width)
-			dx = np.abs(x1 - x0).astype(int)
-			dy = -np.abs(y1 - y0).astype(int)
-			sx = 1 if x1 > x0 else -1
-			sy = 1 if y1 > y0 else -1
-			error = dx + dy
-
-			while True:
-				if x0 < 0 or x0 >= width_in_cells or y0 < 0 or y0 >= height_in_cells:
-					break
-
-				if -128 - occupancy_grid[y0, x0] < -kMissOdds:
-					occupancy_grid[y0, x0] = occupancy_grid[y0, x0] - kMissOdds
-				else:
-					occupancy_grid[y0, x0] = -128
-
-				e2 = error * 2
-				if e2 >= dy:
-					if x0 == x1:
-						break
-					error = error + dy
-					x0 += sx
-				if e2 <= dx:
-					if y0 == y1:
-						break
-					error = error + dx
-					y0 += sy
-
-			if x0 >= 0 and x0 < width_in_cells and y0 >= 0 and y0 < height_in_cells:
-				if 127 - occupancy_grid[y0, x0] > kHitOdds:
-					occupancy_grid[y0, x0] = occupancy_grid[y0, x0] + kHitOdds
-				else:
-					occupancy_grid[y0, x0] = 127
+			bresenham_update(occupancy_grid, poses[i,:2], global_points[i][j], min_x, min_y, cell_width, kHitOdds, kMissOdds)
 
 	return occupancy_grid, (min_x, min_y)
 
@@ -103,45 +70,9 @@ def update_occupancy_grid(occupancy_grid, poses, lidar_points, cell_width, min_x
 
 	global_points = construct_global_points(poses, lidar_points)
 
-	width_in_cells = occupancy_grid.shape[1]
-	height_in_cells = occupancy_grid.shape[0]
-
 	for i in range(n):
 		for j in range(ms[i]):
-			y0, x0 = global_position_to_grid_cell(poses[i,:2], min_x, min_y, cell_width)
-			y1, x1 = global_position_to_grid_cell(global_points[i][j], min_x, min_y, cell_width)
-			dx = np.abs(x1 - x0).astype(int)
-			dy = -np.abs(y1 - y0).astype(int)
-			sx = 1 if x1 > x0 else -1
-			sy = 1 if y1 > y0 else -1
-			error = dx + dy
-
-			while True:
-				if x0 < 0 or x0 >= width_in_cells or y0 < 0 or y0 >= height_in_cells:
-					break
-
-				if -128 - occupancy_grid[y0, x0] < -kMissOdds:
-					occupancy_grid[y0, x0] = occupancy_grid[y0, x0] - kMissOdds
-				else:
-					occupancy_grid[y0, x0] = -128
-
-				e2 = error * 2
-				if e2 >= dy:
-					if x0 == x1:
-						break
-					error = error + dy
-					x0 += sx
-				if e2 <= dx:
-					if y0 == y1:
-						break
-					error = error + dx
-					y0 += sy
-
-			if x0 >= 0 and x0 < width_in_cells and y0 >= 0 and y0 < height_in_cells:
-				if 127 - occupancy_grid[y0, x0] > kHitOdds:
-					occupancy_grid[y0, x0] = occupancy_grid[y0, x0] + kHitOdds
-				else:
-					occupancy_grid[y0, x0] = 127
+			bresenham_update(occupancy_grid, poses[i,:2], global_points[i][j], min_x, min_y, cell_width, kHitOdds, kMissOdds)
 
 	return occupancy_grid
 
@@ -159,6 +90,43 @@ def construct_global_points(poses, lidar_points):
 			point_homogeneous = np.array([[lidar_points[i][j,0]], [lidar_points[i][j,1]], [1]])
 			global_points[i][j] = (pose_tf @ point_homogeneous).flatten()[:2]
 	return global_points
+
+def bresenham_update(occupancy_grid, pose, point, min_x, min_y, cell_width, kHitOdds, kMissOdds):
+	# Update the given occupancy grid for a given lidar beam, based on the various input parameters
+	y0, x0 = global_position_to_grid_cell(pose, min_x, min_y, cell_width)
+	y1, x1 = global_position_to_grid_cell(point, min_x, min_y, cell_width)
+	dx = np.abs(x1 - x0).astype(int)
+	dy = -np.abs(y1 - y0).astype(int)
+	sx = 1 if x1 > x0 else -1
+	sy = 1 if y1 > y0 else -1
+	error = dx + dy
+
+	while True:
+		if x0 < 0 or x0 >= occupancy_grid.shape[1] or y0 < 0 or y0 >= occupancy_grid.shape[0]:
+			break
+
+		if -128 - occupancy_grid[y0, x0] < -kMissOdds:
+			occupancy_grid[y0, x0] = occupancy_grid[y0, x0] - kMissOdds
+		else:
+			occupancy_grid[y0, x0] = -128
+
+		e2 = error * 2
+		if e2 >= dy:
+			if x0 == x1:
+				break
+			error = error + dy
+			x0 += sx
+		if e2 <= dx:
+			if y0 == y1:
+				break
+			error = error + dx
+			y0 += sy
+
+	if x0 >= 0 and x0 < occupancy_grid.shape[1] and y0 >= 0 and y0 < occupancy_grid.shape[0]:
+		if 127 - occupancy_grid[y0, x0] > kHitOdds:
+			occupancy_grid[y0, x0] = occupancy_grid[y0, x0] + kHitOdds
+		else:
+			occupancy_grid[y0, x0] = 127
 
 def global_position_to_grid_cell(pos, min_x, min_y, cell_width):
 	# Given an (x, y) position pos, as well as various information about
