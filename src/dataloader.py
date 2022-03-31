@@ -32,7 +32,7 @@ def get_images(data_folder_name):
 
 def get_point_cloud(ranges, thetas):
 	np_ranges = np.array(ranges).reshape((-1, 1))
-	np_thetas = np.array(thetas).reshape((-1, 1))
+	np_thetas = -np.array(thetas).reshape((-1, 1))
 	valid = 0.05 < np_ranges  # RP Lidar advertises a 12 meter range
 	np_ranges = np_ranges[valid]
 	np_thetas = np_thetas[valid]
