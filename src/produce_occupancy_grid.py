@@ -23,13 +23,7 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, min_width=0, min_hei
 	n = poses.shape[0]
 	ms = [len(lidar_points[i]) for i in range(len(lidar_points))]
 
-	global_points = []
-	for i in range(n):
-		pose_tf = utils.odom_change_to_mat(poses[i])
-		global_points.append(np.zeros(lidar_points[i].shape))
-		for j in range(ms[i]):
-			point_homogeneous = np.array([[lidar_points[i][j,0]], [lidar_points[i][j,1]], [1]])
-			global_points[i][j] = (pose_tf @ point_homogeneous).flatten()[:2]
+	global_points = construct_global_points(poses, lidar_points)
 
 	all_points = np.concatenate(global_points)
 	min_x = np.min(all_points) - (cell_width / 2)
@@ -107,13 +101,7 @@ def update_occupancy_grid(occupancy_grid, poses, lidar_points, cell_width, min_x
 	n = poses.shape[0]
 	ms = [len(lidar_points[i]) for i in range(len(lidar_points))]
 
-	global_points = []
-	for i in range(n):
-		pose_tf = utils.odom_change_to_mat(poses[i])
-		global_points.append(np.zeros(lidar_points[i].shape))
-		for j in range(ms[i]):
-			point_homogeneous = np.array([[lidar_points[i][j,0]], [lidar_points[i][j,1]], [1]])
-			global_points[i][j] = (pose_tf @ point_homogeneous).flatten()[:2]
+	global_points = construct_global_points(poses, lidar_points)
 
 	width_in_cells = occupancy_grid.shape[1]
 	height_in_cells = occupancy_grid.shape[0]
@@ -156,6 +144,21 @@ def update_occupancy_grid(occupancy_grid, poses, lidar_points, cell_width, min_x
 					occupancy_grid[y0, x0] = 127
 
 	return occupancy_grid
+
+def construct_global_points(poses, lidar_points):
+	# Transforms the points in lidar_points into the global frame, and
+	# concatenates them into a single list
+	n = poses.shape[0]
+	ms = [len(lidar_points[i]) for i in range(len(lidar_points))]
+
+	global_points = []
+	for i in range(n):
+		pose_tf = utils.odom_change_to_mat(poses[i])
+		global_points.append(np.zeros(lidar_points[i].shape))
+		for j in range(ms[i]):
+			point_homogeneous = np.array([[lidar_points[i][j,0]], [lidar_points[i][j,1]], [1]])
+			global_points[i][j] = (pose_tf @ point_homogeneous).flatten()[:2]
+	return global_points
 
 def global_position_to_grid_cell(pos, min_x, min_y, cell_width):
 	# Given an (x, y) position pos, as well as various information about
