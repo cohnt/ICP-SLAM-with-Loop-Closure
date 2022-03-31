@@ -3,8 +3,11 @@ import numpy as np
 import lcm
 import sys
 import os
-sys.path.append("lcmtypes")
-from lcmtypes import odometry_t, lidar_t
+sys.path.append(sys.path[0] + "/lcmtypes")
+try:
+	from src.lcmtypes import odometry_t, lidar_t
+except:
+	from lcmtypes import odometry_t, lidar_t
 
 
 def read_img(path):
@@ -41,6 +44,7 @@ def get_point_cloud(ranges, thetas):
 def get_all_lcm_data(data_folder_name):
 	odometry = np.empty((0, 4), dtype=float)
 	point_cloud = []
+	point_cloud_matched_idx = []
 
 	log_fname = ""
 	for file in os.listdir(data_folder_name):
@@ -55,7 +59,9 @@ def get_all_lcm_data(data_folder_name):
 		if event.channel == "LIDAR":
 			msg = lidar_t.decode(event.data)
 			point_cloud.append(get_point_cloud(msg.ranges, msg.thetas))
-	return odometry, point_cloud
+			point_cloud_matched_idx.append(len(odometry)-1)
+
+	return odometry[point_cloud_matched_idx], point_cloud
 		
 
 def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=True):
@@ -74,9 +80,13 @@ def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=
 	print(len(point_clouds))
 	print(point_clouds[0].shape)
 
+	if not load_images:
+		return odometry[:,1:], point_clouds
+
 	imgs, timestamps = get_images(data_folder_name)
 	print(imgs.shape)
 	print(timestamps.shape)
+
 
 
 def run_test():
