@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import lcm
+import sys
+sys.path.append("lcmtypes")
 from lcmtypes import odometry_t, lidar_t
 
 
@@ -11,35 +13,43 @@ def read_img(path):
 
 def get_images(data_folder_name):
 	timestamps_file = open(f'{data_folder_name}/image_timestamps.txt', 'r')
-	lines = timestamps_file.readlies()
+	lines = timestamps_file.readlines()
 	imgs = np.empty((0, 480, 640, 3), dtype=float)
-	timestamps = np.empty((0), dtype=float)
+	timestamps = np.empty(0, dtype=float)
 	
 	for line in lines:
 		n, time = line.split(", ")
 		img = read_img(f'{data_folder_name}/raw_images/image{n}.png')
-		imgs = np.append(imgs, img)
+		imgs = np.append(imgs, np.array([img]), axis=0)
 		timestamps = np.append(timestamps, time)
-		
-	timestamps -= timestamps[0]
 
 	return imgs, timestamps
 
 
+def get_point_cloud(ranges, thetas):
+	np_ranges = np.array(ranges).reshape((-1, 1))
+	np_thetas = np.array(thetas).reshape((-1, 1))
+	valid = 0.05 < np_ranges  # RP Lidar advertises a 12 meter range
+	np_ranges = np_ranges[valid]
+	np_thetas = np_thetas[valid]
+	x = np_ranges * np.cos(np_thetas)
+	y = np_ranges * np.sin(np_thetas)
+	return np.hstack((x.reshape((-1, 1)), y.reshape((-1, 1))))
+
+
 def get_all_lcm_data(data_folder_name):
-	odometry = np.empty((0, 3), dtype=float)
-	point_cloud = np.empty((0, 0, 2), dtype=float)
-	init = False
-	
+	odometry = np.empty((0, 4), dtype=float)
+	point_cloud = []
 	log = lcm.EventLog(f'{data_folder_name}/lcm.log', "r")
 	
 	for event in log:
 		if event.channel == "ODOMETRY":
 			msg = odometry_t.decode(event.data)
-			if not init:
-				start_time = msg.utime
-				init = True
-			odometry = np.append(odometry, np.array([msg.utime - start_time, msg.x, msg.y, msg.theta], axis = 0)	
+			odometry = np.append(odometry, np.array([[msg.utime, msg.x, msg.y, msg.theta]]), axis=0)
+		if event.channel == "LIDAR":
+			msg = lidar_t.decode(event.data)
+			point_cloud.append(get_point_cloud(msg.ranges, msg.thetas))
+	return odometry, point_cloud
 		
 
 def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=True):
@@ -52,4 +62,22 @@ def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=
 	# (3) An (n, h, w, 3) numpy array of camera images
 	# n is the number of camera images, m is the number of ranges returned by the LIDAR sensor,
 	# and w, h are the dimensions of the image
-	pass
+
+	odometry, point_clouds = get_all_lcm_data(data_folder_name)
+	print(odometry.shape)
+	print(len(point_clouds))
+	print(point_clouds[0].shape)
+
+	imgs, timestamps = get_images(data_folder_name)
+	print(imgs.shape)
+	print(timestamps.shape)
+
+
+def run_test():
+	parse_lcm_log("data/lab_maze")
+
+
+if __name__ == '__main__':
+	run_test()
+
+
