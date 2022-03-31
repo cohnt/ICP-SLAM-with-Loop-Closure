@@ -21,17 +21,19 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, kHitOdds=3, kMissOdd
 	n = poses.shape[0]
 	ms = [len(lidar_points[i]) for i in range(len(lidar_points))]
 
-	global_points = np.zeros(lidar_points.shape)
+	global_points = []
 	for i in range(n):
 		pose_tf = utils.odom_change_to_mat(poses[i])
+		global_points.append(np.zeros(lidar_points[i].shape))
 		for j in range(ms[i]):
-			point_homogeneous = np.array([[lidar_points[i,j,0]], [lidar_points[i,j,1]], [1]])
-			global_points[i,j] = (pose_tf @ point_homogeneous).flatten()[:2]
+			point_homogeneous = np.array([[lidar_points[i][j,0]], [lidar_points[i][j,1]], [1]])
+			global_points[i][j] = (pose_tf @ point_homogeneous).flatten()[:2]
 
-	min_x = np.min(global_points[:,:,0]) - (cell_width / 2)
-	max_x = np.max(global_points[:,:,0]) + (cell_width / 2)
-	min_y = np.min(global_points[:,:,1]) - (cell_width / 2)
-	max_y = np.max(global_points[:,:,1]) + (cell_width / 2)
+	all_points = np.concatenate(global_points)
+	min_x = np.min(all_points) - (cell_width / 2)
+	max_x = np.max(all_points) + (cell_width / 2)
+	min_y = np.min(all_points) - (cell_width / 2)
+	max_y = np.max(all_points) + (cell_width / 2)
 	width_dist = max_x - min_x
 	height_dist = max_y - min_y
 
@@ -43,7 +45,7 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, kHitOdds=3, kMissOdd
 	for i in range(n):
 		for j in range(ms[i]):
 			y0, x0 = global_position_to_grid_cell(poses[i,:2], min_x, min_y, cell_width)
-			y1, x1 = global_position_to_grid_cell(global_points[i,j], min_x, min_y, cell_width)
+			y1, x1 = global_position_to_grid_cell(global_points[i][j], min_x, min_y, cell_width)
 			dx = np.abs(x1 - x0).astype(int)
 			dy = -np.abs(y1 - y0).astype(int)
 			sx = 1 if x1 > x0 else -1
