@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import lcm
 import sys
+import os
 sys.path.append("lcmtypes")
 from lcmtypes import odometry_t, lidar_t
 
@@ -40,7 +41,12 @@ def get_point_cloud(ranges, thetas):
 def get_all_lcm_data(data_folder_name):
 	odometry = np.empty((0, 4), dtype=float)
 	point_cloud = []
-	log = lcm.EventLog(f'{data_folder_name}/lcm.log', "r")
+
+	log_fname = ""
+	for file in os.listdir(data_folder_name):
+		if file.endswith(".log"):
+			log_fname = os.path.join(data_folder_name, file)
+	log = lcm.EventLog(log_fname, "r")
 	
 	for event in log:
 		if event.channel == "ODOMETRY":
@@ -74,7 +80,7 @@ def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=
 
 
 def run_test():
-	parse_lcm_log("data/lab_maze")
+	parse_lcm_log("./data/lab_maze")
 
 
 if __name__ == '__main__':
