@@ -28,7 +28,7 @@ lidar_points = np.array([
 	] for i in range(ranges.shape[0])
 ])
 
-og = produce_occupancy_grid.produce_occupancy_grid(poses, lidar_points, 0.05, kHitOdds=100, kMissOdds=50)
+og, _ = produce_occupancy_grid.produce_occupancy_grid(poses, lidar_points, 0.05, kHitOdds=100, kMissOdds=50)
 
 fig, ax = plt.subplots()
 visualization.draw_occupancy_grid(ax, og, cell_size=0.05, origin_location=np.array([0, 0]))
