@@ -22,7 +22,9 @@ def get_images(data_folder_name):
 		n, time = line.split(", ")
 		img = read_img(f'{data_folder_name}/raw_images/image{n}.png')
 		imgs = np.append(imgs, np.array([img]), axis=0)
-		timestamps = np.append(timestamps, time)
+		timestamps = np.append(timestamps, float(time))
+
+	timestamps *= 1E6
 
 	return imgs, timestamps
 
@@ -64,14 +66,17 @@ def get_all_lcm_data(data_folder_name):
 
 def align_data(odometry, odometry_timestamps, point_clouds, point_cloud_timestamps, images, image_timestamps):
 	final_odometry = np.empty((0, 3), dtype=float)
-	final_point_clooud = np.empty((0, 1000, 2), dtype=float)
+	final_point_cloud = np.empty((0, 1000, 2), dtype=float)
 	for i in range(images.shape[0]):
 		time = image_timestamps[i]
 		odo_idx = np.searchsorted(odometry_timestamps, time)
 		point_idx = np.searchsorted(point_cloud_timestamps, time)
-		final_odometry = np.append(final_odometry, odometry[odo_idx])
-		final_point_clooud = np.append(final_point_clooud, point_clouds[point_idx])
-	return final_odometry, final_point_clooud, images
+		odometry_to_add = odometry[odo_idx if odo_idx < odometry.shape[0] else -1].reshape((1, 3))
+		final_odometry = np.append(final_odometry, odometry_to_add, axis=0)
+		point_cloud_to_add = point_clouds[point_idx if point_idx < len(point_clouds) else -1]
+		point_cloud_to_add = np.vstack((point_cloud_to_add, np.zeros((1000 - point_cloud_to_add.shape[0], 2)))).reshape((1, 1000, 2))
+		final_point_cloud = np.append(final_point_cloud, point_cloud_to_add, axis=0)
+	return final_odometry, final_point_cloud, images
 		
 
 def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=True):
@@ -98,7 +103,10 @@ def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=
 
 
 def run_test():
-	parse_lcm_log("./data/lab_maze")
+	odometry, point_clouds, images = parse_lcm_log("./data/lab_maze")
+	print(odometry.shape)
+	print(point_clouds.shape)
+	print(images.shape)
 
 
 if __name__ == '__main__':
