@@ -13,12 +13,33 @@ def get_correspondences(pc1, pc2):
 	return correspondences
 
 
-def get_transform(pc1, pc2, correstpondences):
-	return None
+def get_transform(pc1, pc2, correspondences):
+	pc2 = pc2[correspondences]
+	pc1_avg = np.sum(pc1, axis=1) / pc1.shape[0]
+	pc2_avg = np.sum(pc2, axis=1) / pc2.shape[0]
+
+	X = pc1[:, 0:2] - pc1_avg
+	Y = pc2[:, 0:2] - pc2_avg
+
+	S = X @ Y.T
+	U, sigma, V_t = np.linalg.svd(S)
+	V = V_t.T
+
+	mid_thingy = np.eye(2)
+	mid_thingy[1, 1] = np.linalg.det(V @ U.T)
+	R = V @ mid_thingy @ U.T
+	t = pc2_avg - R @ pc1_avg
+
+	transformed = np.eye(3)	
+	transformed[0:2, 0:2] = R
+	transformed[2, 0] = t[0]
+	transformed[2, 1] = t[1]
+
+	return transformed
 
 
-def get_error(pc1, pc2, correstpondences):
-	return np.sum((pc1 - pc2[correstpondences]) ** 2)
+def get_error(pc1, pc2, correspondences):
+	return np.sum((pc1 - pc2[correspondences]) ** 2)
 
 
 def icp(pc1, pc2, init_transform=np.eye(3), epsilon=0.01):
