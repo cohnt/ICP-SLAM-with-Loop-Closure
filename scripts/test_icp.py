@@ -38,7 +38,7 @@ pc2 = transformation_mat @ pc1
 # plt.show()
 
 list_of_transforms = icp.icp(pc1.T, pc2.T)
-print(list_of_transforms)
+# print(list_of_transforms)
 
 fig, ax = plt.subplots()
 ax.set_aspect("equal")

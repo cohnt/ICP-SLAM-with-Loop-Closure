@@ -101,7 +101,6 @@ def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=
 	# n is the number of camera images, m is the number of ranges returned by the LIDAR sensor,
 	# and w, h are the dimensions of the image
 
-	# TODO: Check timestamps and make sure they are on the same scale
 	# TODO: Use start and stop time
 
 	odometry, odometry_timestamps, point_clouds, point_cloud_timestamps = get_all_lcm_data(data_folder_name)
