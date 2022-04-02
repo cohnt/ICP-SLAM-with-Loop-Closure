@@ -37,8 +37,10 @@ pc2 = transformation_mat @ pc1
 # ax.scatter(pc2[0,:], pc2[1,:], color="blue")
 # plt.show()
 
-list_of_transforms = icp.icp(pc1.T, pc2.T)
+# list_of_transforms = icp.icp(pc1.T, pc2.T)
 # print(list_of_transforms)
+
+transforms = [np.eye(3)]
 
 fig, ax = plt.subplots()
 ax.set_aspect("equal")
@@ -46,11 +48,16 @@ ax.scatter(pc1[0,:], pc1[1,:], color="red")
 ax.scatter(pc2[0,:], pc2[1,:], color="blue")
 plt.draw()
 plt.pause(0.001)
-for tf in list_of_transforms:
-	print(tf)
-	temp = tf @ pc1
-	# corresp = icp.correspondences(temp, pc2)
-	visualization.draw_icp_iteration(ax, temp.T, pc2.T)
+for i in range(100):
+	next_transform, correspondences, error = icp.icp_iteration(pc1.T, pc2.T, transforms[-1])
+	print(next_transform)
+	temp = next_transform @ pc1
+	transforms.append(next_transform)
+	visualization.draw_icp_iteration(ax, temp.T, pc2.T, correspondences)
 	plt.draw()
+	print(error)
+	if error < 0.01:
+		break
 	plt.pause(0.5)
+
 plt.show()

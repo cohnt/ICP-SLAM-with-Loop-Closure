@@ -36,13 +36,14 @@ def draw_pose_graph(ax, pose_graph, node_positions):
 def draw_icp_iteration(ax, pc1, pc2, correspondences=[]):
 	# Draws the output of ICP at a single iteration, centered on
 	# pc1, showing both point clouds, and optionally the correspondences
-	# between them. If it's given, correspondences should be an (n, 2)
+	# between them. If it's given, correspondences should be an (n, 1)
 	# numpy array of integers, showing the matched pairs. The first
 	# entry in each row is the index of the point in pc1, and the second
 	# entry in each row is the index of the point in pc2.
 
 	# First, draw the matches (if specified)
-	for i, j in correspondences:
+	for i in range(correspondences.shape[0]):
+		j = correspondences[i]
 		xs = [pc1[i,0], pc2[j,0]]
 		ys = [pc1[i,1], pc2[j,1]]
 		ax.plot(xs, ys, color="black")

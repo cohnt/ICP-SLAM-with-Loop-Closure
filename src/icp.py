@@ -42,6 +42,14 @@ def get_error(pc1, pc2, correspondences):
 	return np.sum((pc1 - pc2[correspondences]) ** 2)
 
 
+def icp_iteration(pc1, pc2, previous_transform):
+	pc1_transformed = np.dot(previous_transform, pc1.T).T
+	correspondences = get_correspondences(pc1_transformed, pc2)
+	trans_mat = get_transform(pc1_transformed, pc2[correspondences])
+	error = get_error(pc1_transformed, pc2, correspondences)
+	return trans_mat, correspondences, error
+
+
 def icp(pc1, pc2, init_transform=np.eye(3), epsilon=0.01):
 	# Runs ICP to estimate the transformation from pc1 to pc2. Optional parameter
 	# init_transform is a 3x3 matrix in SE(2), that provides the initialization
@@ -53,12 +61,10 @@ def icp(pc1, pc2, init_transform=np.eye(3), epsilon=0.01):
 	max_iters = 100
 
 	while True:
-		transformed = np.dot(transforms[-1], pc1.T).T
-		correspondences = get_correspondences(transformed, pc2)
-		transformation = get_transform(transformed, pc2[correspondences])
-		transforms.append(transformation)
-		print(get_error(transformed, pc2, correspondences))
-		if get_error(transformed, pc2, correspondences) < epsilon:
+		next_transform, correspondences, error = icp_iteration(pc1, pc2, transforms[-1])
+		transforms.append(next_transform)
+		print(error)
+		if error < epsilon:
 			return transforms
 		if iteration > max_iters:
 			return transforms
