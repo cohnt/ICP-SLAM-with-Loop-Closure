@@ -27,7 +27,7 @@ sides_in_a_square = 4
 pos_noise_var = 0.01
 theta_noise_var = 0.025
 
-num_constriants = 40
+num_constriants = 100
 
 poses = [] # Will be an n-by-3 list of poses, each pose is (x, y, theta)
 current_pose = [0, 0, 0]
@@ -57,16 +57,17 @@ for i in range(len(constraint_idx)):
 	b = constraint_idx[i] + (poses_per_side * sides_in_a_square * loop_count[i][1])
 	pg.add_constraint(a, b, np.eye(3))
 
+pg.add_constraint(0, poses_per_side * sides_in_a_square, np.eye(3))
+pg.add_constraint(len(poses)-1, len(poses)-1 - (poses_per_side * sides_in_a_square), np.eye(3))
+
 fig, ax = plt.subplots()
 visualization.draw_pose_graph(ax, pg)
 visualization.draw_path(ax, poses[:,:2])
 plt.draw()
 plt.pause(0.1)
 
-iters = 0
 while True:
-	iters += 1
-	pose_graph_optimization.pose_graph_optimization_step(pg, iters)
+	pose_graph_optimization.pose_graph_optimization_step(pg)
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg)
 	visualization.draw_path(ax, pg.poses[:,:2])
