@@ -21,8 +21,7 @@ odometry = np.array([
 	[2, 2, np.pi/2]
 ])
 path = odometry[:,:2]
-tfs = np.array([utils.odom_change_to_mat(odometry[i+1] - odometry[i]) for i in range(len(odometry)-1)])
-g = pose_graph.PoseGraph(tfs)
+g = pose_graph.PoseGraph(odometry)
 g.add_constraint(0, 4, np.eye(3))
 
 fig, ax = plt.subplots()
@@ -42,12 +41,7 @@ plt.show()
 
 pc1 = np.random.random(size=(10,2))
 pc2 = np.random.random(size=(10,2))
-correspondences = np.array([
-	[0, 0],
-	[0, 1],
-	[1, 2],
-	[3, 5]
-], dtype=int)
+correspondences = np.array([0, 1, 2, 5], dtype=int)
 
 fig, ax = plt.subplots()
 visualization.draw_icp_iteration(ax, pc1, pc2)

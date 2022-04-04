@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 
 def draw_occupancy_grid(ax, occupancy_grid, cell_size, origin_location):
@@ -34,7 +35,7 @@ def draw_pose_graph(ax, pose_graph, node_positions, draw_nodes=False):
 	if draw_nodes:
 		ax.scatter(node_positions[:,0], node_positions[:,1], color="red")
 
-def draw_icp_iteration(ax, pc1, pc2, correspondences=[]):
+def draw_icp_iteration(ax, pc1, pc2, correspondences=np.array([])):
 	# Draws the output of ICP at a single iteration, centered on
 	# pc1, showing both point clouds, and optionally the correspondences
 	# between them. If it's given, correspondences should be an (n, 1)
