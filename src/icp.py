@@ -60,6 +60,7 @@ def icp_iteration(pc1, pc2, previous_transform):
 	pc1_transformed = np.dot(previous_transform, pc1.T).T
 	correspondences = get_correspondences(pc1_transformed, pc2)
 	trans_mat = get_transform(pc1_transformed, pc2[correspondences])
+	trans_mat = trans_mat @ previous_transform
 	error = get_error(pc1_transformed, pc2[correspondences])
 	return trans_mat, correspondences, error
 

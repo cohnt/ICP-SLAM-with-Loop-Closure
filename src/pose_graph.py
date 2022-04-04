@@ -1,4 +1,5 @@
 import networkx as nx
+import src.utils as utils
 
 # Pose graphs are directed networkx graphs. Nodes are labeled with numerical IDs, matching their
 # index in the original data. Edges are 3x3 numpy matrices in SE(2), which denote the transformation
@@ -16,12 +17,17 @@ import networkx as nx
 # from node i to node j.
 
 class PoseGraph():
-	def __init__(self, transformations):
-		# transformations should be an (n-1, 3, 3) numpy array, where the ith entry is the SE(3) matrix
-		# of the transformation from pose i to pose i+1. Returns a pose graph.
+	def __init__(self, poses):
+		# poses should be an (n,3) numpy array of poses, where the ith entry is an (x, y, theta) pose.
+		# Returns a pose graph.
+		self.poses = poses
 		self.graph = nx.DiGraph()
-		for i in range(0, transformations.shape[0]):
-			self.graph.add_edge(i, i+1, object=transformations[i])
+
+		successive_offset = poses[1:] - poses[:-1]
+		successive_tf = [utils.odom_change_to_mat(offset) for offset in successive_offset]
+
+		for i in range(0, len(poses)-1):
+			self.graph.add_edge(i, i+1, object=successive_tf[i])
 
 	def add_constraint(self, i, j, transformation):
 		# Adds the transformation from i to j into the graph object
