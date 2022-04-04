@@ -36,7 +36,7 @@ plt.show()
 fig, ax = plt.subplots()
 visualization.draw_occupancy_grid(ax, occupancy_grid, cell_size=0.1, origin_location=np.array([0, 0]))
 visualization.draw_path(ax, path)
-visualization.draw_pose_graph(ax, g, path)
+visualization.draw_pose_graph(ax, g)
 plt.show()
 
 pc1 = np.random.random(size=(10,2))
