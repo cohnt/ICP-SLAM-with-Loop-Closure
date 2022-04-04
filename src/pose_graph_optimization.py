@@ -1,6 +1,6 @@
 import numpy as np
 
-def pose_graph_optimization_step(pose_graph, iters):
+def pose_graph_optimization_step(pose_graph, learning_rate=1, loop_closure_uncertainty=0.2):
 	gamma = np.full(3, np.inf)
 	N = pose_graph.graph.number_of_nodes()
 	M = np.zeros((N, 3))
@@ -10,7 +10,7 @@ def pose_graph_optimization_step(pose_graph, iters):
 		if np.abs(a - b) == 1:
 			# The pose graph optimization does not consider successive points as constraints
 			continue
-		sigma = np.eye(3)
+		sigma = np.eye(3) * loop_closure_uncertainty
 		R = construct_R(pose_graph, a)
 		W = np.linalg.inv(R @ sigma @ R.T)
 		for i in range(a, b):
@@ -24,7 +24,7 @@ def pose_graph_optimization_step(pose_graph, iters):
 		if np.abs(a - b) == 1:
 			# The pose graph optimization does not consider successive points as constraints
 			continue
-		sigma = np.eye(3)
+		sigma = np.eye(3) * loop_closure_uncertainty
 		R = construct_R(pose_graph, a)
 		Pb_new = pose_to_mat(pose_graph.poses[a]) @ tf
 		r = mat_to_pose(Pb_new - pose_to_mat(pose_graph.poses[b]))
@@ -32,7 +32,8 @@ def pose_graph_optimization_step(pose_graph, iters):
 		d = 2 * np.linalg.inv(R.T @ sigma @ R) @ r.reshape(-1, 1)
 
 		for j in range(3):
-			alpha = 1 / (gamma[j] * iters)
+			alpha = 1 / gamma[j]
+			alpha *= learning_rate
 			total_weight = np.sum(1 / M[a:b,j])
 			beta = (b - a) * d[j,0] * alpha
 			if np.abs(beta) > np.abs(r[j]):
