@@ -66,7 +66,11 @@ visualization.draw_path(ax, poses[:,:2])
 plt.draw()
 plt.pause(0.1)
 
+iters = 0
 while True:
+	iters += 1
+	if iters % 5 == 0:
+		pg.flip()
 	pose_graph_optimization.pose_graph_optimization_step(pg)
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg)
