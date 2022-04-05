@@ -24,3 +24,13 @@ def invert_affine(mat):
 	new_mat[:-1,:-1] = mat[:-1,:-1].T
 	new_mat[:-1,-1] = new_mat[:-1,:-1] @ mat[:-1,-1]
 	return new_mat
+
+def pose_to_mat(pose):
+	return np.array([
+		[np.cos(pose[2]), -np.sin(pose[2]), pose[0]],
+		[np.sin(pose[2]), np.cos(pose[2]), pose[1]],
+		[0, 0, 1]
+	])
+
+def mat_to_pose(mat):
+	return np.array([mat[0,2], mat[1,2], np.arctan2(mat[1,0], mat[0,0])])

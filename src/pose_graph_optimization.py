@@ -1,4 +1,5 @@
 import numpy as np
+import src.utils as utils
 
 def pose_graph_optimization_step(pose_graph, learning_rate=1, loop_closure_uncertainty=0.2):
 	gamma = np.full(3, np.inf)
@@ -26,8 +27,8 @@ def pose_graph_optimization_step(pose_graph, learning_rate=1, loop_closure_uncer
 			continue
 		sigma = np.eye(3) * loop_closure_uncertainty
 		R = construct_R(pose_graph, a)
-		Pb_new = pose_to_mat(pose_graph.poses[a]) @ tf
-		r = mat_to_pose(Pb_new - pose_to_mat(pose_graph.poses[b]))
+		Pb_new = utils.pose_to_mat(pose_graph.poses[a]) @ tf
+		r = utils.mat_to_pose(Pb_new - utils.pose_to_mat(pose_graph.poses[b]))
 		r[2] = r[2] % (2 * np.pi)
 		d = 2 * np.linalg.inv(R.T @ sigma @ R) @ r.reshape(-1, 1)
 
@@ -54,13 +55,3 @@ def construct_R(pose_graph, idx):
 		[0, 0, 1]
 	])
 	return R
-
-def pose_to_mat(pose):
-	return np.array([
-		[np.cos(pose[2]), -np.sin(pose[2]), pose[0]],
-		[np.sin(pose[2]), np.cos(pose[2]), pose[1]],
-		[0, 0, 1]
-	])
-
-def mat_to_pose(mat):
-	return np.array([mat[0,2], mat[1,2], np.arctan2(mat[1,0], mat[0,0])])
