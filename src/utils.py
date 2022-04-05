@@ -34,3 +34,11 @@ def pose_to_mat(pose):
 
 def mat_to_pose(mat):
 	return np.array([mat[0,2], mat[1,2], np.arctan2(mat[1,0], mat[0,0])])
+
+def homogenize(vecs):
+	# TODO
+	pass
+
+def unhomogenize(vecs):
+	# TODO
+	pass
