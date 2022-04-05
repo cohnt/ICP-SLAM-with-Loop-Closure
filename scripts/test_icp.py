@@ -50,6 +50,7 @@ plt.draw()
 plt.pause(0.001)
 for i in range(100):
 	next_transform, correspondences, error = icp.icp_iteration(pc1.T, pc2.T, transforms[-1])
+	ax.cla()
 	print(next_transform)
 	temp = next_transform @ pc1
 	transforms.append(next_transform)
@@ -58,6 +59,6 @@ for i in range(100):
 	print(error)
 	if error < 0.01:
 		break
-	plt.pause(0.5)
+	plt.pause(1)
 
 plt.show()
