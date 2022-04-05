@@ -65,7 +65,7 @@ def icp_iteration(pc1, pc2, previous_transform):
 	return trans_mat, correspondences, error
 
 
-def icp(pc1, pc2, init_transform=np.eye(3), epsilon=0.01, max_iters=100):
+def icp(pc1, pc2, init_transform=np.eye(3), epsilon=0.01, max_iters=100, stopping_thresh=0.0001):
 	# Runs ICP to estimate the transformation from pc1 to pc2. Optional parameter
 	# init_transform is a 3x3 matrix in SE(2), that provides the initialization
 	# for ICP. Returns a 3x3 matrix in SE(2) that estimates the final transformation
@@ -78,7 +78,7 @@ def icp(pc1, pc2, init_transform=np.eye(3), epsilon=0.01, max_iters=100):
 	while True:
 		next_transform, correspondences, error = icp_iteration(pc1, pc2, transforms[-1])
 		transforms.append(next_transform)
-		print(error)
+		# print(error)
 		if error < epsilon:
 			return transforms, error
 		if iteration > max_iters:
@@ -86,7 +86,7 @@ def icp(pc1, pc2, init_transform=np.eye(3), epsilon=0.01, max_iters=100):
 
 		if last_err == None:
 			last_err = error
-		elif np.abs(last_err - error) < 0.001:
+		elif np.abs(last_err - error) < stopping_thresh:
 			return transforms, error
 		last_err = error
 

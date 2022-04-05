@@ -21,13 +21,13 @@ import src.visualization as visualization
 
 # This is the script that calls everything else. It will take in various command line arguments (such as filename, parameters), and runs SLAM
 
-# odometry, lidar_points = dataloader.parse_lcm_log("./data/EECS_3", load_images=False)
-odometry, lidar_points = dataloader.parse_lcm_log("./data/lab_maze", load_images=False)
+odometry, lidar_points = dataloader.parse_lcm_log("./data/EECS_3", load_images=False)
+# odometry, lidar_points = dataloader.parse_lcm_log("./data/lab_maze", load_images=False)
 
 # print(len(odometry))
 
-# start = 120 # EECS
-start = 25 # LAB
+start = 75 # EECS
+# start = 25 # LAB
 cell_width = 0.05
 # og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(odometry[:start], lidar_points[:start], cell_width, min_width=3, min_height=3)
 
@@ -41,7 +41,7 @@ fig, ax = plt.subplots()
 # plt.pause(0.001)
 
 
-skip = 1
+skip = 5
 assert skip < start
 iters = 0
 draw_every = 10
@@ -75,10 +75,11 @@ for i in range(start, len(odometry), skip):
 	# plt.scatter(pc_prev[:,0], pc_prev[:,1], color="blue")
 	# plt.show()
 
-	if error > 5:
-		real_tf = estimated_tf
-	else:
-		real_tf = tfs[-1]
+	# if error > 5:
+	# 	real_tf = estimated_tf
+	# else:
+	# 	real_tf = tfs[-1]
+	real_tf = tfs[-1]
 	real_prev_pose = utils.pose_to_mat(corrected_poses[-1])
 	real_pose = real_prev_pose @ real_tf
 	real_odom = utils.mat_to_pose(real_pose)
@@ -92,8 +93,18 @@ for i in range(start, len(odometry), skip):
 	visualization.draw_path(ax, corrected_poses)
 	ax.set_aspect("equal")
 	
-	plt.draw()
-	plt.pause(0.1)
-	# plt.savefig("iter%04d.png" % iters)
+	# plt.draw()
+	# plt.pause(0.1)
+	plt.savefig("iter%04d.png" % iters)
+	print(iters)
 
-	print(len(corrected_poses))
+	if(iters >= 180): # Use 180 for EECS_3 for now
+		break
+
+print("Recorded %d poses. Creating occupancy grid..." % len(corrected_poses))
+og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(corrected_poses, lidar_points[:len(corrected_poses)], cell_width, kHitOdds=20, kMissOdds=10)
+print("Drawing occupancy grid...")
+fig, ax = plt.subplots()
+visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
+plt.savefig("final_map.png")
+plt.show()

@@ -50,6 +50,7 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, min_width=0, min_hei
 	occupancy_grid = np.zeros((height_in_cells, width_in_cells), dtype=np.int8)
 
 	for i in range(n):
+		print("Processing frame %d" % i)
 		for j in range(ms[i]):
 			bresenham_update(occupancy_grid, poses[i,:2], global_points[i][j], min_x, min_y, cell_width, kHitOdds, kMissOdds)
 
