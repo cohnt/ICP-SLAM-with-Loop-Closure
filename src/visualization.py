@@ -17,10 +17,10 @@ def draw_occupancy_grid(ax, occupancy_grid, cell_size, origin_location):
 	top = origin_location[1] + height - half_cell_size
 	ax.imshow(occupancy_grid, origin="lower", extent=(left, right, bottom, top), cmap=plt.get_cmap("gist_yarg"), vmin=-128, vmax=127)
 
-def draw_path(ax, path):
+def draw_path(ax, path, color="blue"):
 	# Draw the robot's path
 	# path should be an (n, 2) numpy array, encoding the (x, y) robot positions
-	ax.plot(path[:,0], path[:,1], color="blue")
+	ax.plot(path[:,0], path[:,1], color=color)
 
 def draw_pose_graph(ax, pose_graph, draw_nodes=False):
 	# Draw the full pose graph (with all additional constraints)
