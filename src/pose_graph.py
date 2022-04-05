@@ -32,3 +32,13 @@ class PoseGraph():
 	def add_constraint(self, i, j, transformation):
 		# Adds the transformation from i to j into the graph object
 		self.graph.add_edge(i, j, object=transformation)
+
+	def flip(self):
+		# Switches the order of all edges, transformations, labels, etc.
+		# Allows the pose graph optimization to work in both directions
+		self.poses = self.poses[::-1]
+		new_graph = nx.DiGraph()
+		n = len(self.poses)-1
+		for a, b, tf in self.graph.edges(data="object"):
+			new_graph.add_edge(n-a, n-b, object=utils.invert_affine(tf))
+		self.graph = new_graph
