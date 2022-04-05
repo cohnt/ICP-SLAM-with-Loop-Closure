@@ -26,10 +26,10 @@ def produce_occupancy_grid(poses, lidar_points, cell_width, min_width=0, min_hei
 	global_points = construct_global_points(poses, lidar_points)
 
 	all_points = np.concatenate(global_points)
-	min_x = np.min(all_points) - (cell_width / 2)
-	max_x = np.max(all_points) + (cell_width / 2)
-	min_y = np.min(all_points) - (cell_width / 2)
-	max_y = np.max(all_points) + (cell_width / 2)
+	min_x = np.min(all_points[:,0]) - (cell_width / 2)
+	max_x = np.max(all_points[:,0]) + (cell_width / 2)
+	min_y = np.min(all_points[:,1]) - (cell_width / 2)
+	max_y = np.max(all_points[:,1]) + (cell_width / 2)
 	width_dist = max_x - min_x
 	height_dist = max_y - min_y
 
