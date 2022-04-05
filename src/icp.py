@@ -13,7 +13,7 @@ def get_correspondences(pc1, pc2):
 	# correspondences[i] is the point in pc2 that corresponds to point i in pc1
 
 	correspondences = np.zeros(pc1.shape[0], dtype=int)
-	for i in range(pc2.shape[0]):
+	for i in range(pc1.shape[0]):
 		correspondences[i] = get_closest_point(pc1[i], pc2)
 
 	return correspondences
