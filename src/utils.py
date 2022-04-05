@@ -17,3 +17,10 @@ def odom_change_to_mat(delta):
 	mat[1,2] = dy
 
 	return mat
+
+def invert_affine(mat):
+	# Given an nxn homogeneous matrix, return its inverse
+	new_mat = np.eye(mat.shape[0])
+	new_mat[:-1,:-1] = mat[:-1,:-1].T
+	new_mat[:-1,-1] = new_mat[:-1,:-1] @ mat[:-1,-1]
+	return new_mat
