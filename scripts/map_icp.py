@@ -35,7 +35,7 @@ corrected_poses = np.array([odometry[0]])
 for i in range(1, start):
 	corrected_poses = np.vstack((corrected_poses, odometry[i]))
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=100)
 # visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
 # plt.draw()
 # plt.pause(0.001)
@@ -98,8 +98,10 @@ for i in range(start, len(odometry), skip):
 	plt.savefig("iter%04d.png" % iters)
 	print(iters)
 
-	if(iters >= 180): # Use 180 for EECS_3 for now
+	if(iters >= 200): # Use 200 for EECS_3 for now
 		break
+
+plt.close(fig)
 
 print("Recorded %d poses. Creating occupancy grid..." % len(corrected_poses))
 og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(corrected_poses, lidar_points[:len(corrected_poses)], cell_width, kHitOdds=20, kMissOdds=10)
