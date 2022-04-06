@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import src.utils as utils
+
 def draw_occupancy_grid(ax, occupancy_grid, cell_size, origin_location):
 	# Draw an occupancy grid
 	# occupancy_grid should be a (h, w) numpy array of integers between -128 and 127, with dtype np.int8
@@ -16,6 +18,13 @@ def draw_occupancy_grid(ax, occupancy_grid, cell_size, origin_location):
 	bottom = origin_location[1] - half_cell_size
 	top = origin_location[1] + height - half_cell_size
 	ax.imshow(occupancy_grid, origin="lower", extent=(left, right, bottom, top), cmap=plt.get_cmap("gist_yarg"), vmin=-128, vmax=127)
+
+def draw_point_map(ax, poses, lidar_points, color="black"):
+	for pose, points in zip(poses, lidar_points):
+		tf = utils.pose_to_mat(pose)
+		pc = np.c_[points, np.ones(len(points))]
+		pc = (tf @ pc.T).T
+		ax.scatter(pc[:,0], pc[:,1], color=color)
 
 def draw_path(ax, path, color="blue"):
 	# Draw the robot's path
