@@ -135,8 +135,8 @@ while True:
 		plt.close(fig)
 		break
 
-print("Recorded %d poses. Creating occupancy grid..." % len(corrected_poses))
-og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(corrected_poses, lidar_points[:len(corrected_poses)], cell_width, kHitOdds=20, kMissOdds=10)
+print("Recorded %d poses. Creating occupancy grid..." % len(pg.poses))
+og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(pg.poses, lidar_points[:len(pg.poses)], cell_width, kHitOdds=20, kMissOdds=10)
 print("Drawing occupancy grid...")
 fig, ax = plt.subplots()
 visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
