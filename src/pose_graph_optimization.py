@@ -28,14 +28,14 @@ def pose_graph_optimization_step(pose_graph, learning_rate=1, loop_closure_uncer
 		sigma = np.eye(3) * loop_closure_uncertainty
 		R = construct_R(pose_graph, a)
 		Pb_new = utils.pose_to_mat(pose_graph.poses[a]) @ tf
-		r = utils.mat_to_pose(Pb_new - utils.pose_to_mat(pose_graph.poses[b]))
+		r = utils.mat_to_pose(Pb_new) - pose_graph.poses[b]
 		r[2] = r[2] % (2 * np.pi)
 		d = 2 * np.linalg.inv(R.T @ sigma @ R) @ r.reshape(-1, 1)
 
 		for j in range(3):
 			alpha = 1 / gamma[j]
 			alpha *= learning_rate
-			total_weight = np.sum(1 / M[a:b,j])
+			total_weight = np.sum(1 / M[a+1:b+1,j])
 			beta = (b - a) * d[j,0] * alpha
 			if np.abs(beta) > np.abs(r[j]):
 				beta = r[j]
