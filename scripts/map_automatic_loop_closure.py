@@ -28,14 +28,16 @@ odometry, lidar_points = dataloader.parse_lcm_log("./data/EECS_3", load_images=F
 
 start = 75 # EECS
 # start = 25 # LAB
-cell_width = 0.05
+cell_width = 0.25
 # og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(odometry[:start], lidar_points[:start], cell_width, min_width=3, min_height=3)
 
 corrected_poses = np.array([odometry[0]])
 for i in range(1, start):
 	corrected_poses = np.vstack((corrected_poses, odometry[i]))
 
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=10)
+dpi = 100
+
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 # visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
 # plt.draw()
 # plt.pause(0.001)
@@ -95,7 +97,7 @@ for i in range(start, len(odometry), skip):
 	
 	# plt.draw()
 	# plt.pause(0.1)
-	plt.savefig("iter%04d.png" % iters)
+	plt.savefig("icp_frame%04d.png" % iters)
 	print(iters)
 
 	if(iters >= 125): # Use 200 for EECS_3 for now
@@ -107,29 +109,30 @@ plt.close(fig)
 pg = pose_graph.PoseGraph(corrected_poses)
 loop_closure_detection.detect_proximity(pg, lidar_points)
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 visualization.draw_pose_graph(ax, pg)
 visualization.draw_path(ax, corrected_poses[:,:2])
 plt.show()
 
-fig, ax = plt.subplots()
-visualization.draw_pose_graph(ax, pg)
-visualization.draw_path(ax, corrected_poses[:,:2])
-plt.draw()
-plt.pause(0.1)
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
+# visualization.draw_pose_graph(ax, pg)
+# visualization.draw_path(ax, corrected_poses[:,:2])
+# plt.draw()
+# plt.pause(0.1)
 
+print("Optimizing pose graph...")
 iters = 0
 max_iters = 25
 while True:
 	iters += 1
-	# if iters % 5 == 0:
-	# 	pg.flip()
 	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters))
 	ax.cla()
-	visualization.draw_pose_graph(ax, pg, draw_nodes=True, draw_orientation=True)
-	# visualization.draw_path(ax, pg.poses[:,:2])
-	plt.draw()
-	plt.pause(0.1)
+	visualization.draw_pose_graph(ax, pg)
+	visualization.draw_path(ax, pg.poses[:,:2])
+	# plt.draw()
+	# plt.pause(0.1)
+	plt.savefig("optim_fame%04d.png" % iters)
+	print(iters)
 
 	if iters >= max_iters:
 		plt.close(fig)
@@ -138,7 +141,7 @@ while True:
 print("Recorded %d poses. Creating occupancy grid..." % len(pg.poses))
 og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(pg.poses, lidar_points[:len(pg.poses)], cell_width, kHitOdds=20, kMissOdds=10)
 print("Drawing occupancy grid...")
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
 plt.savefig("final_map.png")
 plt.show()
