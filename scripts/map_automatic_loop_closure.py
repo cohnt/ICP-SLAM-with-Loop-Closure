@@ -124,10 +124,10 @@ while True:
 	iters += 1
 	# if iters % 5 == 0:
 	# 	pg.flip()
-	pose_graph_optimization.pose_graph_optimization_step(pg)
+	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters))
 	ax.cla()
-	visualization.draw_pose_graph(ax, pg)
-	visualization.draw_path(ax, pg.poses[:,:2])
+	visualization.draw_pose_graph(ax, pg, draw_nodes=True, draw_orientation=True)
+	# visualization.draw_path(ax, pg.poses[:,:2])
 	plt.draw()
 	plt.pause(0.1)
 

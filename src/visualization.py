@@ -22,16 +22,25 @@ def draw_path(ax, path, color="blue"):
 	# path should be an (n, 2) numpy array, encoding the (x, y) robot positions
 	ax.plot(path[:,0], path[:,1], color=color)
 
-def draw_pose_graph(ax, pose_graph, draw_nodes=False):
+def draw_pose_graph(ax, pose_graph, draw_nodes=False, node_size=0.05**2, draw_orientation=False, orientation_size=0.1, edge_color="red", node_color="blue", orien_color="green"):
 	# Draw the full pose graph (with all additional constraints)
 
 	# First, draw the edges
 	for edge in pose_graph.graph.edges:
-		ax.plot(pose_graph.poses[edge,0], pose_graph.poses[edge, 1], color="red")
+		ax.plot(pose_graph.poses[edge,0], pose_graph.poses[edge, 1], color=edge_color)
 
 	# Next, draw the nodes
 	if draw_nodes:
-		ax.scatter(pose_graph.poses[:,0], pose_graph.poses[:,1], color="red")
+		ax.scatter(pose_graph.poses[:,0], pose_graph.poses[:,1], color=node_color, s=node_size)
+
+	# Finally, draw the orientation
+	if draw_orientation:
+		for pose in pose_graph.poses:
+			theta = pose[2]
+			vec = np.array([np.cos(theta), np.sin(theta)]) * orientation_size
+			xs = [pose[0], pose[0]+vec[0]]
+			ys = [pose[1], pose[1]+vec[1]]
+			ax.plot(xs, ys, color=orien_color)
 
 def draw_icp_iteration(ax, pc1, pc2, correspondences=np.array([])):
 	# Draws the output of ICP at a single iteration, centered on
