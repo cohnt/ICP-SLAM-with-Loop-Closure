@@ -4,7 +4,7 @@ import scipy.spatial
 import src.icp as icp
 import src.utils as utils
 
-def detect_proximity(pose_graph, lidar_points, min_dist_along_path=5, max_dist=2):
+def detect_proximity(pose_graph, lidar_points, min_dist_along_path=15, max_dist=5, err_thresh=125):
 	pairwise_dists = scipy.spatial.distance.cdist(pose_graph.poses[:,:2], pose_graph.poses[:,:2])
 	dist_traveled = np.cumsum(np.diag(pairwise_dists, k=1))
 	dist_traveled = np.append([0],dist_traveled)
@@ -19,4 +19,10 @@ def detect_proximity(pose_graph, lidar_points, min_dist_along_path=5, max_dist=2
 			matches.append([i, closest])
 
 	for i, j in matches:
-		pose_graph.add_constraint(i, j, np.eye(3))
+		# estimated_tf = utils.pose_to_mat(pose_graph.poses[j] - pose_graph.poses[i])
+		estimated_tf = np.eye(3)
+		pc_prev = np.c_[lidar_points[i], np.ones(len(lidar_points[i]))]
+		pc_current = np.c_[lidar_points[j], np.ones(len(lidar_points[j]))]
+		tfs, error = icp.icp(pc_current, pc_prev, init_transform=estimated_tf, max_iters=100, epsilon=0.05)
+		if error < err_thresh:
+			pose_graph.add_constraint(i, j, tfs[-1])
