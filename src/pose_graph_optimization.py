@@ -32,7 +32,7 @@ def pose_graph_optimization_step(pose_graph, learning_rate=1, loop_closure_uncer
 		r[2] = r[2] % (2 * np.pi)
 		d = 2 * np.linalg.inv(R.T @ sigma @ R) @ r.reshape(-1, 1)
 
-		for j in range(3):
+		for j in range(2):
 			alpha = 1 / gamma[j]
 			alpha *= learning_rate
 			total_weight = np.sum(1 / M[a+1:b+1,j])
@@ -44,6 +44,12 @@ def pose_graph_optimization_step(pose_graph, learning_rate=1, loop_closure_uncer
 				if i <= b:
 					dpose = dpose + (beta / M[i,j] / total_weight)
 				pose_graph.poses[i,j] = pose_graph.poses[i,j] + dpose
+
+		for i in range(1, N-1):
+			vec = pose_graph.poses[i+1][0:2] - pose_graph.poses[i][0:2]
+			if np.linalg.norm(vec) > 0:
+				vec = vec / np.linalg.norm(vec)
+				pose_graph.poses[i][2] = np.arctan2(vec[1], vec[0])
 
 def construct_R(pose_graph, idx):
 	theta =pose_graph.poses[idx][2]
