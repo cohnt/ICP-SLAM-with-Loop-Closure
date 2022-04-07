@@ -24,7 +24,7 @@ def draw_point_map(ax, poses, lidar_points, color="black"):
 		tf = utils.pose_to_mat(pose)
 		pc = np.c_[points, np.ones(len(points))]
 		pc = (tf @ pc.T).T
-		ax.scatter(pc[:,0], pc[:,1], color=color)
+		ax.scatter(pc[:,0], pc[:,1], color=color, s=0.1)
 
 def draw_path(ax, path, color="blue"):
 	# Draw the robot's path
