@@ -18,6 +18,7 @@ def detect_proximity(pose_graph, lidar_points, min_dist_along_path=15, max_dist=
 		if pairwise_dists[i, closest] <= max_dist:
 			matches.append([i, closest])
 
+	matches.reverse()
 	points_used = set()
 	for i, j in matches:
 		if (i not in points_used) and (j not in points_used):
