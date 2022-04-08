@@ -101,6 +101,9 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 	for idx in range(len(good_matches)):
 		i, j = good_matches[idx]
 		if (i not in points_used) or (j not in points_used):
+			old_i, old_j = i, j
+			i *= 3
+			j *= 3
 		# if True:
 			# estimated_tf = utils.pose_to_mat(pose_graph.poses[j] - pose_graph.poses[i])
 			estimated_tf = np.eye(3)
@@ -113,8 +116,8 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 				points_used.add(i)
 				points_used.add(j)
 				if save_matches:
-					match_img = cv2.drawMatches(greys[i],keypoints[i],greys[j],keypoints[j],good_matches_keypoints[idx],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+					match_img = cv2.drawMatches(greys[old_i],keypoints[old_i],greys[old_j],keypoints[old_j],good_matches_keypoints[idx],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 					fig, ax = plt.subplots()
 					ax.imshow(match_img)
-					plt.savefig("match_%d_%d_%f.png" % (i, j, dist_mat[i,j]))
+					plt.savefig("match_%d_%d_%f.png" % (i, j, dist_mat[old_i,old_j]))
 					plt.close(fig)
