@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import scipy.spatial
 import cv2
 from tqdm import tqdm
@@ -36,7 +37,7 @@ def detect_proximity(pose_graph, lidar_points, min_dist_along_path=2, max_dist=1
 				points_used.add(i)
 				points_used.add(j)
 
-def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5, image_err_thresh=125, n_matches=10, icp_err_thresh=30):
+def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5, image_err_thresh=125, n_matches=10, icp_err_thresh=30, save_dists=False, save_matches=False):
 	pairwise_dists = scipy.spatial.distance.cdist(pose_graph.poses[:,:2], pose_graph.poses[:,:2])
 	dist_traveled = np.cumsum(np.diag(pairwise_dists, k=1))
 	dist_traveled = np.append([0],dist_traveled)
@@ -51,6 +52,7 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 	print("Finding keypoints")
 	keypoints = []
 	descriptors = []
+	matched_keypoints = [[None for _ in range(len(greys))] for _ in range(len(greys))]
 	# sift = cv2.SIFT_create()
 	orb = cv2.ORB_create()
 	for i in tqdm(range(0, len(greys), image_rate)):
@@ -72,28 +74,32 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 				continue
 
 			dist_mat[i,j] = np.sum([match.distance for match in matches[:n_matches]])
+			matched_keypoints[i][j] = matches[:n_matches]
 	threshed = dist_mat < image_err_thresh
 
-	import matplotlib.pyplot as plt
-	fig, ax = plt.subplots()
-	ax.imshow(dist_mat)
-	plt.savefig("dist_mat.png")
-	plt.close(fig)
-	fig, ax = plt.subplots()
-	ax.imshow(threshed)
-	plt.savefig("dist_mat_threshed.png")
-	plt.close(fig)
+	if save_dists:
+		fig, ax = plt.subplots()
+		ax.imshow(dist_mat)
+		plt.savefig("dist_mat.png")
+		plt.close(fig)
+		fig, ax = plt.subplots()
+		ax.imshow(threshed)
+		plt.savefig("dist_mat_threshed.png")
+		plt.close(fig)
 
 	good_matches = []
+	good_matches_keypoints = []
 	for j in range(dist_mat.shape[1]):
 		i = np.argmin(dist_mat[:,j])
 		if dist_mat[i,j] < image_err_thresh:
 			print(dist_mat[i,j])
 			good_matches.append([i, j])
+			good_matches_keypoints.append(matched_keypoints[i][j])
 	print(good_matches)
 
 	points_used = set()
-	for i, j in good_matches:
+	for idx in range(len(good_matches)):
+		i, j = good_matches[idx]
 		if (i not in points_used) or (j not in points_used):
 		# if True:
 			# estimated_tf = utils.pose_to_mat(pose_graph.poses[j] - pose_graph.poses[i])
@@ -106,60 +112,9 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 				pose_graph.add_constraint(i, j, tfs[-1])
 				points_used.add(i)
 				points_used.add(j)
-
-
-	# import pdb
-	# pdb.set_trace()
-
-
-
-	# i = 0
-	# j = 50
-
-	# # bf = cv2.BFMatcher()
-	# # matches = bf.knnMatch(des[i],des[j],k=1)
-
-	# bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-	# matches = bf.match(descriptors[i], descriptors[j])
-	# matches = sorted(matches, key = lambda x:x.distance)
-
-	# # GOOD
-	# # 7.0
-	# # 9.0
-	# # 11.0
-	# # 11.0
-	# # 11.0
-	# # 11.0
-	# # 12.0
-	# # 12.0
-	# # 12.0
-	# # 12.0
-
-	# # BAD
-	# # 25.0
-	# # 26.0
-	# # 26.0
-	# # 26.0
-	# # 27.0
-	# # 27.0
-	# # 28.0
-	# # 28.0
-	# # 28.0
-	# # 29.0
-
-
-
-	# for m in matches[:10]:
-	# 	print(m.distance)
-
-	# img3 = cv2.drawMatches(greys[i],keypoints[i],greys[j],keypoints[j],matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-
-	# # for m in matches:
-	# # 	m = m[0]
-	# # 	print(m.distance)
-
-	# # img3 = cv2.drawMatchesKnn(greys[i],keypoints[i],greys[j],keypoints[j],good,None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-	
-	# import matplotlib.pyplot as plt
-	# plt.imshow(img3)
-	# plt.show()
+				if save_matches:
+					match_img = cv2.drawMatches(greys[i],keypoints[i],greys[j],keypoints[j],good_matches_keypoints[idx],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+					fig, ax = plt.subplots()
+					ax.imshow(match_img)
+					plt.savefig("match_%d_%d_%f.png" % (i, j, dist_mat[i,j]))
+					plt.close(fig)
