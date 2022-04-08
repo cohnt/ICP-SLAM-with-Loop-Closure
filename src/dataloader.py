@@ -23,7 +23,10 @@ def get_images(data_folder_name, image_stop):
 	timestamps = np.empty(0, dtype=float)
 	
 	print("Loading images...")
-	for line in tqdm(lines):
+	if image_stop > len(lines):
+		image_stop = len(lines)
+	for i in tqdm(range(0, image_stop+1)):
+		line = lines[i]
 		n, time = line.split(", ")
 		if int(n) > image_stop:
 			break
