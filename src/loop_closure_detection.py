@@ -58,9 +58,19 @@ def find_keypoints(img):
 	kp, des = orb.detectAndCompute(img, None)
 	return serialize_keypoints(kp, des)
 
-def matchify(desc1, desc2, i, j, n_matches):
-	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-	matches = bf.match(desc1, desc2)
+def matchify(desc1, desc2, i, j, n_matches, approximate_match):
+	if approximate_match:
+		FLANN_INDEX_KDTREE = 0
+		index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+		search_params = dict(checks=50)   # or pass empty dictionary
+		flann = cv2.FlannBasedMatcher(index_params,search_params)
+		desc1 = np.asarray(desc1, np.float32)
+		desc2 = np.asarray(desc2, np.float32)
+		matches = flann.match(desc1, desc2)
+	else:
+		bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+		matches = bf.match(desc1, desc2)
+
 	matches = sorted(matches, key = lambda x:x.distance)
 
 	if len(matches) < n_matches:
@@ -68,7 +78,9 @@ def matchify(desc1, desc2, i, j, n_matches):
 
 	return np.sum([match.distance for match in matches[:n_matches]]), serialize_matches(matches[:n_matches]), (i, j)
 
-def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5, image_err_thresh=125, n_matches=10, icp_err_thresh=30, save_dists=False, save_matches=False, n_jobs=-1):
+def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5,
+	                                image_err_thresh=125, n_matches=10, icp_err_thresh=30, save_dists=False,
+	                                save_matches=False, n_jobs=-1, approximate_match=True):
 	pairwise_dists = scipy.spatial.distance.cdist(pose_graph.poses[:,:2], pose_graph.poses[:,:2])
 	dist_traveled = np.cumsum(np.diag(pairwise_dists, k=1))
 	dist_traveled = np.append([0],dist_traveled)
@@ -86,7 +98,7 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 
 	print("Matching keypoints")
 	parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
-	dist_mat_s, matched_keypoints_s, idx_s = zip(*parallel(delayed(matchify)(descriptors[i], descriptors[j], i, j, n_matches) for i in tqdm(range(0, len(descriptors))) for j in range(start_idx[i], len(descriptors))))
+	dist_mat_s, matched_keypoints_s, idx_s = zip(*parallel(delayed(matchify)(descriptors[i], descriptors[j], i, j, n_matches, approximate_match) for i in tqdm(range(0, len(descriptors))) for j in range(start_idx[i], len(descriptors))))
 
 	matched_keypoints = [[None for _ in range(len(greys))] for _ in range(len(greys))]
 	dist_mat = np.full((len(descriptors), len(descriptors)), np.inf)
@@ -94,6 +106,8 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 		i, j = idx_s[idx]
 		dist_mat[i,j] = dist_mat_s[idx]
 		matched_keypoints[i][j] = deserialize_matches(matched_keypoints_s[idx])
+
+	print("Closest points %f" % np.min(dist_mat))
 	threshed = dist_mat < image_err_thresh
 
 	if save_dists:
