@@ -24,7 +24,7 @@ def get_images(data_folder_name, image_stop):
 	
 	print("Loading images...")
 	if image_stop > len(lines):
-		image_stop = len(lines)
+		image_stop = len(lines)-1
 	for i in tqdm(range(0, image_stop+1)):
 		line = lines[i]
 		n, time = line.split(", ")
