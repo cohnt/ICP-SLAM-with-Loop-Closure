@@ -128,27 +128,30 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 			good_matches.append([i, j])
 			good_matches_keypoints.append(matched_keypoints[i][j])
 
-	points_used = set()
+	print("Aligning matched point clouds with ICP")
+	parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
+
+	tfs, errs = zip(*parallel(delayed(icp.icp)(
+		np.c_[lidar_points[i*image_rate],np.ones(len(lidar_points[i*image_rate]))],
+		np.c_[lidar_points[j*image_rate],np.ones(len(lidar_points[j*image_rate]))],
+		init_transform=np.eye(3),
+		max_iters=100,
+		epsilon=0.05
+	) for i, j in tqdm(good_matches)))
+
 	for idx in range(len(good_matches)):
 		i, j = good_matches[idx]
-		if (i not in points_used) or (j not in points_used):
-			old_i, old_j = i, j
-			i *= image_rate
-			j *= image_rate
-		# if True:
-			# estimated_tf = utils.pose_to_mat(pose_graph.poses[j] - pose_graph.poses[i])
-			estimated_tf = np.eye(3)
-			pc_prev = np.c_[lidar_points[i], np.ones(len(lidar_points[i]))]
-			pc_current = np.c_[lidar_points[j], np.ones(len(lidar_points[j]))]
-			tfs, error = icp.icp(pc_current, pc_prev, init_transform=estimated_tf, max_iters=100, epsilon=0.05)
-			if error < icp_err_thresh:
-				print("%d %d %f" % (i, j, error))
-				pose_graph.add_constraint(i, j, tfs[-1])
-				points_used.add(i)
-				points_used.add(j)
-				if save_matches:
-					match_img = cv2.drawMatches(greys[old_i],keypoints[old_i],greys[old_j],keypoints[old_j],good_matches_keypoints[idx],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-					fig, ax = plt.subplots()
-					ax.imshow(match_img)
-					plt.savefig("match_%d_%d_%f.png" % (i, j, dist_mat[old_i,old_j]))
-					plt.close(fig)
+		old_i, old_j = i, j
+		i *= image_rate
+		j *= image_rate
+
+		tf, error= tfs[idx][-1], errs[idx]
+		if error < icp_err_thresh:
+			# print("%d %d %f" % (i, j, error))
+			pose_graph.add_constraint(i, j, tf)
+			if save_matches:
+				match_img = cv2.drawMatches(greys[old_i],keypoints[old_i],greys[old_j],keypoints[old_j],good_matches_keypoints[idx],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+				fig, ax = plt.subplots()
+				ax.imshow(match_img)
+				plt.savefig("match_%d_%d_%f.png" % (i, j, dist_mat[old_i,old_j]))
+				plt.close(fig)
