@@ -1,5 +1,6 @@
 import networkx as nx
 import src.utils as utils
+import numpy as np
 
 # Pose graphs are directed networkx graphs. Nodes are labeled with numerical IDs, matching their
 # index in the original data. Edges are 3x3 numpy matrices in SE(2), which denote the transformation
@@ -37,8 +38,9 @@ class PoseGraph():
 		# Switches the order of all edges, transformations, labels, etc.
 		# Allows the pose graph optimization to work in both directions
 		self.poses = self.poses[::-1]
+		self.poses[:,2] = (self.poses[:,2] + np.pi) % (2 * np.pi)
 		new_graph = nx.DiGraph()
 		n = len(self.poses)-1
 		for a, b, tf in self.graph.edges(data="object"):
-			new_graph.add_edge(n-a, n-b, object=utils.invert_affine(tf))
+			new_graph.add_edge(n-b, n-a, object=tf)
 		self.graph = new_graph
