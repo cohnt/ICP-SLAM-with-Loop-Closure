@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.spatial
 import cv2
 from tqdm import tqdm
+from joblib import Parallel, delayed
 
 import src.icp as icp
 import src.utils as utils
@@ -37,7 +38,21 @@ def detect_proximity(pose_graph, lidar_points, min_dist_along_path=2, max_dist=1
 				points_used.add(i)
 				points_used.add(j)
 
-def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5, image_err_thresh=125, n_matches=10, icp_err_thresh=30, save_dists=False, save_matches=False):
+def serialize_keypoints(kp, des):
+	return [(point.pt, point.size, point.angle, point.response, point.octave, point.class_id, desc) for point, desc in zip(kp, des)]
+
+def deserialize_keypoints(serialized_keypoints):
+	kp = [cv2.KeyPoint(x=point[0][0], y=point[0][1], size=point[1], angle=point[2],
+	      response=point[3], octave=point[4], class_id=point[5]) for point in serialized_keypoints]
+	des = np.array([point[6] for point in serialized_keypoints])
+	return kp, des
+
+def find_keypoints(img):
+	orb = cv2.ORB_create()
+	kp, des = orb.detectAndCompute(img, None)
+	return serialize_keypoints(kp, des)
+
+def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5, image_err_thresh=125, n_matches=10, icp_err_thresh=30, save_dists=False, save_matches=False, n_jobs=-1):
 	pairwise_dists = scipy.spatial.distance.cdist(pose_graph.poses[:,:2], pose_graph.poses[:,:2])
 	dist_traveled = np.cumsum(np.diag(pairwise_dists, k=1))
 	dist_traveled = np.append([0],dist_traveled)
@@ -50,21 +65,14 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 	greys = [cv2.cvtColor(np.asarray(image, dtype=np.uint8), cv2.COLOR_RGB2GRAY) for image in images]
 
 	print("Finding keypoints")
-	keypoints = []
-	descriptors = []
-	matched_keypoints = [[None for _ in range(len(greys))] for _ in range(len(greys))]
-	# sift = cv2.SIFT_create()
-	orb = cv2.ORB_create()
-	for i in tqdm(range(0, len(greys), image_rate)):
-		# kp, des = sift.detectAndCompute(greys[i], None)
-		kp, des = orb.detectAndCompute(greys[i], None)
-		keypoints.append(kp)
-		descriptors.append(des)
+	parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
+	serialized_keypoints_list = parallel(delayed(find_keypoints)(greys[i]) for i in tqdm(range(0, len(greys), image_rate)))
+	keypoints, descriptors = zip(*[deserialize_keypoints(serialized_keypoints) for serialized_keypoints in serialized_keypoints_list])
 
 	print("Matching keypoints")
+	matched_keypoints = [[None for _ in range(len(greys))] for _ in range(len(greys))]
 	dist_mat = np.full((len(descriptors), len(descriptors)), np.inf)
 	for i in tqdm(range(0, len(descriptors))):
-		# print("Image %d" % i)
 		for j in range(start_idx[i], len(descriptors)):
 			bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 			matches = bf.match(descriptors[i], descriptors[j])
