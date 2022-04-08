@@ -1,6 +1,7 @@
 import networkx as nx
 import src.utils as utils
 import numpy as np
+import pickle
 
 # Pose graphs are directed networkx graphs. Nodes are labeled with numerical IDs, matching their
 # index in the original data. Edges are 3x3 numpy matrices in SE(2), which denote the transformation
@@ -21,8 +22,12 @@ class PoseGraph():
 	def __init__(self, poses):
 		# poses should be an (n,3) numpy array of poses, where the ith entry is an (x, y, theta) pose.
 		# Returns a pose graph.
+		# Call with poses == None only if you're going to load from a file
 		self.poses = poses
 		self.graph = nx.DiGraph()
+
+		if poses is None:
+			return
 
 		successive_offset = poses[1:] - poses[:-1]
 		successive_tf = [utils.odom_change_to_mat(offset) for offset in successive_offset]
@@ -44,3 +49,11 @@ class PoseGraph():
 		for a, b, tf in self.graph.edges(data="object"):
 			new_graph.add_edge(n-b, n-a, object=tf)
 		self.graph = new_graph
+
+	def save(self, fname):
+		with open(fname, "wb") as f:
+			pickle.dump((self.poses, self.graph), f)
+
+	def load(self, fname):
+		with open(fname, "rb") as f:
+			self.poses, self.graph = pickle.load(f)
