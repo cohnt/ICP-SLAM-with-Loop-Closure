@@ -23,7 +23,7 @@ import src.visualization as visualization
 # This is the script that calls everything else. It will take in various command line arguments (such as filename, parameters), and runs SLAM
 
 start = 11
-end = 200
+end = np.inf
 dpi = 100
 cell_width = 0.05
 
@@ -80,8 +80,9 @@ loop_closure_detection.detect_images_direct_similarity(pg, lidar_points, images,
 
 print("Optimizing pose graph...")
 fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
+max_iters = 100
 for iters in tqdm(range(max_iters)):
-	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters))
+	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters+1))
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg)
 	visualization.draw_path(ax, pg.poses[:,:2])
