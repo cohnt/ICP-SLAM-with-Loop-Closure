@@ -27,10 +27,11 @@ start = 11
 end = 200
 dpi = 100
 cell_width = 0.1
-image_rate = 3
+image_rate = 1
+n_jobs = -1 # Set the number of threads to use, or -1 to use all
 
 print("Loading the data...")
-odometry, lidar_points, images = dataloader.parse_lcm_log("./data/EECS_3", load_images=True, image_stop=end)
+odometry, lidar_points, images = dataloader.parse_lcm_log("./data/EECS_3", load_images=True, image_stop=end, n_jobs=n_jobs)
 print("Done!")
 
 odometry = odometry[start:]
@@ -59,7 +60,7 @@ plt.close(fig)
 
 print("Aligning poses with ICP...")
 raw_tfs = odometry[1:] - odometry[:-1]
-parallel = Parallel(n_jobs=-1, verbose=0, backend="loky")
+parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
 tfs, errs = zip(*parallel(delayed(icp.icp)(
 	np.c_[lidar_points[i],np.ones(len(lidar_points[i]))],
 	np.c_[lidar_points[i-1],np.ones(len(lidar_points[i-1]))],
