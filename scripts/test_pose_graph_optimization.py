@@ -46,17 +46,17 @@ for _ in range(num_loops):
 		current_pose[2] %= 2 * np.pi
 poses = np.array(poses)
 
-plt.plot(poses[:,2])
-plt.show()
+# plt.plot(poses[:,2])
+# plt.show()
 
 plt.scatter(poses[:,0], poses[:,1])
 plt.show()
 
 pg = pose_graph.PoseGraph(poses)
 
-fig, ax = plt.subplots()
-visualization.draw_pose_graph(ax, pg, draw_nodes=True, draw_orientation=True)
-plt.show()
+# fig, ax = plt.subplots()
+# visualization.draw_pose_graph(ax, pg, draw_nodes=True, draw_orientation=True)
+# plt.show()
 
 constraint_idx = np.random.choice(poses_per_side * sides_in_a_square, num_constriants, replace=True)
 loop_count = [np.random.choice(num_loops, 2, replace=False) for _ in constraint_idx]

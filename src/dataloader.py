@@ -15,7 +15,7 @@ def read_img(path):
 	return image
 
 
-def get_images(data_folder_name):
+def get_images(data_folder_name, image_stop):
 	timestamps_file = open(f'{data_folder_name}/image_timestamps.txt', 'r')
 	lines = timestamps_file.readlines()
 	imgs = np.empty((0, 480, 640, 3), dtype=float)
@@ -23,6 +23,9 @@ def get_images(data_folder_name):
 	
 	for line in lines:
 		n, time = line.split(", ")
+		if int(n) > image_stop:
+			break
+		print("Loading image %d" % int(n))
 		img = read_img(f'{data_folder_name}/raw_images/image{n}.png')
 		imgs = np.append(imgs, np.array([img]), axis=0)
 		timestamps = np.append(timestamps, float(time))
@@ -90,7 +93,7 @@ def align_data(odometry, odometry_timestamps, point_clouds, point_cloud_timestam
 		return final_odometry, point_clouds
 
 
-def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=True):
+def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=True, image_stop=np.inf):
 	# This script should read in the log file and images, matches lidar and odometry data
 	# to each image, and then returns three things:
 	# (1) An (n, 3) numpy array of odometry values (x, y, theta)
@@ -105,7 +108,7 @@ def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=
 
 	odometry, odometry_timestamps, point_clouds, point_cloud_timestamps = get_all_lcm_data(data_folder_name)
 	if load_images:
-		images, image_timestamps = get_images(data_folder_name)
+		images, image_timestamps = get_images(data_folder_name, image_stop=image_stop)
 	else:
 		images, image_timestamps = None, None
 		
