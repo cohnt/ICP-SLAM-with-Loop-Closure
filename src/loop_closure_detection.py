@@ -58,7 +58,7 @@ def find_keypoints(img):
 	kp, des = orb.detectAndCompute(img, None)
 	return serialize_keypoints(kp, des)
 
-def matchify(desc1, desc2, n_matches):
+def matchify(desc1, desc2, i, j, n_matches):
 	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 	matches = bf.match(desc1, desc2)
 	matches = sorted(matches, key = lambda x:x.distance)
@@ -66,7 +66,7 @@ def matchify(desc1, desc2, n_matches):
 	if len(matches) < n_matches:
 		return np.inf
 
-	return np.sum([match.distance for match in matches[:n_matches]]), serialize_matches(matches[:n_matches])
+	return np.sum([match.distance for match in matches[:n_matches]]), serialize_matches(matches[:n_matches]), (i, j)
 
 def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5, image_err_thresh=125, n_matches=10, icp_err_thresh=30, save_dists=False, save_matches=False, n_jobs=-1):
 	pairwise_dists = scipy.spatial.distance.cdist(pose_graph.poses[:,:2], pose_graph.poses[:,:2])
@@ -75,7 +75,6 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 	start_idx = np.array([
 		np.searchsorted(dist_traveled, dist_traveled[i]+min_dist_along_path, side="right") for i in range(len(dist_traveled))
 	])
-	print(start_idx)
 
 	print("Converting to grayscale...")
 	greys = [cv2.cvtColor(np.asarray(image, dtype=np.uint8), cv2.COLOR_RGB2GRAY) for image in images]
@@ -87,14 +86,14 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 
 	print("Matching keypoints")
 	parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
-	dist_mat_s, matched_keypoints_s = zip(*parallel(delayed(matchify)(descriptors[i], descriptors[j], n_matches) for i in tqdm(range(0, len(descriptors))) for j in range(0, len(descriptors))))
+	dist_mat_s, matched_keypoints_s, idx_s = zip(*parallel(delayed(matchify)(descriptors[i], descriptors[j], i, j, n_matches) for i in tqdm(range(0, len(descriptors))) for j in range(start_idx[i], len(descriptors))))
 
-	idx = 0
-	for i in range(0, len(descriptors)):
-		for j in range(start_idx[i], len(descriptors)):
-			dist_mat[i,j] = dist_mat_s[idx]
-			matched_keypoints[i][j] = deserialize_matches(matched_keypoints_s[idx])
-			idx += 1
+	matched_keypoints = [[None for _ in range(len(greys))] for _ in range(len(greys))]
+	dist_mat = np.full((len(descriptors), len(descriptors)), np.inf)
+	for idx in range(len(dist_mat_s)):
+		i, j = idx_s[idx]
+		dist_mat[i,j] = dist_mat_s[idx]
+		matched_keypoints[i][j] = deserialize_matches(matched_keypoints_s[idx])
 	threshed = dist_mat < image_err_thresh
 
 	if save_dists:
@@ -112,7 +111,6 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 	for j in range(dist_mat.shape[1]):
 		i = np.argmin(dist_mat[:,j])
 		if dist_mat[i,j] < image_err_thresh:
-			print(dist_mat[i,j])
 			good_matches.append([i, j])
 			good_matches_keypoints.append(matched_keypoints[i][j])
 
