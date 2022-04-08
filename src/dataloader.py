@@ -9,7 +9,7 @@ try:
 	from src.lcmtypes import odometry_t, lidar_t
 except:
 	from lcmtypes import odometry_t, lidar_t
-
+from joblib import Parallel, delayed
 
 
 
@@ -17,25 +17,26 @@ def read_img(path):
 	image = cv2.imread(path, cv2.COLOR_BGR2RGB)
 	return image
 
+def get_image(data_folder_name, line):
+	n, _ = line.split(", ")
+	img = read_img(f'{data_folder_name}/raw_images/image{n}.png')
+	return img
 
 def get_images(data_folder_name, image_stop):
 	timestamps_file = open(f'{data_folder_name}/image_timestamps.txt', 'r')
 	lines = timestamps_file.readlines()
-	
+
 	print("Loading images...")
 	if image_stop > len(lines):
 		image_stop = len(lines)-1
 
-	imgs = np.zeros((image_stop+1,480,640,3), dtype=np.uint8)
-	timestamps = np.zeros(image_stop+1, dtype=float)
+	parallel = Parallel(n_jobs=-1, verbose=0, backend="loky")
+	imgs = np.asarray(parallel(delayed(get_image)(data_folder_name, lines[i]) for i in tqdm(range(0, image_stop+1))))
 
-	for i in tqdm(range(0, image_stop+1)):
+	timestamps = np.zeros(image_stop+1, dtype=float)
+	for i in range(0, image_stop+1):
 		line = lines[i]
 		n, time = line.split(", ")
-		if int(n) > image_stop:
-			break
-		img = read_img(f'{data_folder_name}/raw_images/image{n}.png')
-		imgs[i] = img
 		timestamps[i] = float(time)
 
 	timestamps *= 1E6
