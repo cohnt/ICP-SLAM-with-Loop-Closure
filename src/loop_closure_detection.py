@@ -95,7 +95,6 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 			print(dist_mat[i,j])
 			good_matches.append([i, j])
 			good_matches_keypoints.append(matched_keypoints[i][j])
-	print(good_matches)
 
 	points_used = set()
 	for idx in range(len(good_matches)):
