@@ -43,17 +43,9 @@ visualization.draw_pose_graph(ax, pg)
 visualization.draw_path(ax, odometry[:,:2])
 plt.show()
 
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-# visualization.draw_pose_graph(ax, pg)
-# visualization.draw_path(ax, corrected_poses[:,:2])
-# plt.draw()
-# plt.pause(0.1)
-
 print("Optimizing pose graph...")
-iters = 0
-max_iters = 100
-while True:
-	iters += 1
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
+for iters in tqdm(range(max_iters)):
 	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters))
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg)
@@ -61,11 +53,7 @@ while True:
 	# plt.draw()
 	# plt.pause(0.1)
 	plt.savefig("optim_fame%04d.png" % iters)
-	print(iters)
-
-	if iters >= max_iters:
-		plt.close(fig)
-		break
+plt.close(fig)
 
 print("Recorded %d poses. Creating occupancy grid..." % len(pg.poses))
 og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(pg.poses, lidar_points[:len(pg.poses)], cell_width, kHitOdds=20, kMissOdds=10)

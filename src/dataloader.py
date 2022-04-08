@@ -23,11 +23,10 @@ def get_images(data_folder_name, image_stop):
 	timestamps = np.empty(0, dtype=float)
 	
 	print("Loading images...")
-	for line in lines:
+	for line in tqdm(lines):
 		n, time = line.split(", ")
 		if int(n) > image_stop:
 			break
-		print("Loading image %d" % int(n))
 		img = read_img(f'{data_folder_name}/raw_images/image{n}.png')
 		imgs = np.append(imgs, np.array([img]), axis=0)
 		timestamps = np.append(timestamps, float(time))

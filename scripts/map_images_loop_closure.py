@@ -78,26 +78,17 @@ loop_closure_detection.detect_images_direct_similarity(pg, lidar_points, images,
 # ax.set_aspect("equal")
 # plt.show()
 
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-
 print("Optimizing pose graph...")
-iters = 0
-max_iters = 100
-while True:
-	iters += 1
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
+for iters in tqdm(range(max_iters)):
 	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters))
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg)
 	visualization.draw_path(ax, pg.poses[:,:2])
-	ax.set_aspect("equal")
 	# plt.draw()
 	# plt.pause(0.1)
 	plt.savefig("optim_fame%04d.png" % iters)
-	print(iters)
-
-	if iters >= max_iters:
-		plt.close(fig)
-		break
+plt.close(fig)
 
 print("Recorded %d poses. Creating occupancy grid..." % len(pg.poses))
 og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(pg.poses, lidar_points, cell_width, kHitOdds=20, kMissOdds=10)
@@ -109,5 +100,6 @@ plt.show()
 
 fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 visualization.draw_point_map(ax, pg.poses, lidar_points)
+ax.set_aspect("equal")
 plt.savefig("final_map_points.png")
 plt.show()
