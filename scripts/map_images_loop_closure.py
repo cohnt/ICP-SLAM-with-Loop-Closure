@@ -24,39 +24,27 @@ import src.visualization as visualization
 # This is the script that calls everything else. It will take in various command line arguments (such as filename, parameters), and runs SLAM
 
 start = 11
-end = 200
+end = np.inf
 dpi = 100
-cell_width = 0.1
-image_rate = 1
+cell_width = 1
+# dpi = 100
+# cell_width = 0.1
+image_rate = 3
 n_jobs = -1 # Set the number of threads to use, or -1 to use all
+kHitOdds = 30
+kMissOdds = 10
+n_matches = 20
+image_err_thresh = 125
 
 print("Loading the data...")
-odometry, lidar_points, images = dataloader.parse_lcm_log("./data/EECS_3", load_images=True, image_stop=end, n_jobs=n_jobs)
+odometry, lidar_points, images = dataloader.parse_lcm_log("./data/EECS_6", load_images=True, image_stop=end, n_jobs=n_jobs)
 print("Done!")
 
-odometry = odometry[start:]
-lidar_points = lidar_points[start:]
-images = images[start:]
+odometry = odometry[start::3]
+lidar_points = lidar_points[start::3]
+images = images[start::3]
 
-print("Producing raw odometry map...")
-og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(odometry, lidar_points, cell_width, kHitOdds=10, kMissOdds=10)
-print("Drawing occupancy grid...")
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
-plt.savefig("odometry_map_og.png")
-visualization.draw_path(ax, odometry)
-plt.savefig("odometry_map_og_path.png")
-plt.close(fig)
-
-produce_occupancy_grid.save_image(og, "odometry_og.png")
-
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-visualization.draw_point_map(ax, odometry, lidar_points)
-ax.set_aspect("equal")
-plt.savefig("odometry_map_points.png")
-visualization.draw_path(ax, odometry)
-plt.savefig("odometry_map_points_path.png")
-plt.close(fig)
+visualization.gen_and_save_map(odometry, lidar_points, "odometry", cell_width, kHitOdds, kMissOdds, dpi)
 
 print("Aligning poses with ICP...")
 raw_tfs = odometry[1:] - odometry[:-1]
@@ -72,7 +60,7 @@ tfs, errs = zip(*parallel(delayed(icp.icp)(
 corrected_poses = np.array([odometry[0]])
 
 print("Saving ICP images...")
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
+# fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 for i in tqdm(range(len(corrected_poses), len(odometry))):
 	real_tf = tfs[i-1][-1]
 	real_prev_pose = utils.pose_to_mat(corrected_poses[-1])
@@ -84,43 +72,25 @@ for i in tqdm(range(len(corrected_poses), len(odometry))):
 	pc_current = np.c_[lidar_points[i-1],np.ones(len(lidar_points[i-1]))]
 	pc1 = (utils.pose_to_mat(corrected_poses[-2]) @ pc_prev.T).T
 	pc2 = (utils.pose_to_mat(corrected_poses[-1]) @ pc_current.T).T
-	ax.scatter(pc1[::10,0], pc1[::10,1], color="red", s=0.1)
-	ax.scatter(pc2[::10,0], pc2[::10,1], color="blue", s=0.1)
+	# ax.scatter(pc1[::10,0], pc1[::10,1], color="red", s=0.1)
+	# ax.scatter(pc2[::10,0], pc2[::10,1], color="blue", s=0.1)
 	
-	visualization.draw_path(ax, corrected_poses)
-	ax.set_aspect("equal")
+	# visualization.draw_path(ax, corrected_poses)
+	# ax.set_aspect("equal")
 	
 	# plt.draw()
 	# plt.pause(0.1)
-	plt.savefig("icp_frame%04d.png" % i)
+	# plt.savefig("icp_frame%04d.png" % i)
 	# print("Frame %d" % i)
 
-plt.close(fig)
+# plt.close(fig)
 
-print("Producing ICP-aligned map...")
-og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(corrected_poses, lidar_points, cell_width, kHitOdds=10, kMissOdds=10)
-print("Drawing occupancy grid...")
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
-plt.savefig("icp_map_og.png")
-visualization.draw_path(ax, corrected_poses)
-plt.savefig("icp_map_og_path.png")
-plt.close(fig)
-
-produce_occupancy_grid.save_image(og, "icp_og.png")
-
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-visualization.draw_point_map(ax, corrected_poses, lidar_points)
-ax.set_aspect("equal")
-plt.savefig("icp_map_points.png")
-visualization.draw_path(ax, corrected_poses)
-plt.savefig("icp_map_points_path.png")
-plt.close(fig)
+visualization.gen_and_save_map(corrected_poses, lidar_points, "icp", cell_width, kHitOdds, kMissOdds, dpi)
 
 pg = pose_graph.PoseGraph(corrected_poses)
 
 print("Detecting loop closures")
-loop_closure_detection.detect_images_direct_similarity(pg, lidar_points, images, min_dist_along_path=5, save_dists=True, save_matches=True, image_rate=image_rate)
+loop_closure_detection.detect_images_direct_similarity(pg, lidar_points, images, min_dist_along_path=5, save_dists=True, save_matches=True, image_rate=image_rate, n_matches=n_matches, image_err_thresh=image_err_thresh)
 
 # fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 # visualization.draw_pose_graph(ax, pg)
@@ -141,23 +111,4 @@ for iters in tqdm(range(max_iters)):
 	plt.savefig("optim_fame%04d.png" % iters)
 plt.close(fig)
 
-print("Recorded %d poses. Creating occupancy grid..." % len(pg.poses))
-og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(pg.poses, lidar_points, cell_width, kHitOdds=10, kMissOdds=10)
-print("Drawing occupancy grid...")
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
-plt.savefig("final_map_og.png")
-visualization.draw_path(ax, pg.poses)
-plt.savefig("final_map_og_path.png")
-plt.show()
-
-produce_occupancy_grid.save_image(og, "final_og.png")
-produce_occupancy_grid.save_grid(og, "final.map", cell_width)
-
-fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-visualization.draw_point_map(ax, pg.poses, lidar_points)
-ax.set_aspect("equal")
-plt.savefig("final_map_points.png")
-visualization.draw_path(ax, pg.poses)
-plt.savefig("final_map_points_path.png")
-plt.show()
+visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi)
