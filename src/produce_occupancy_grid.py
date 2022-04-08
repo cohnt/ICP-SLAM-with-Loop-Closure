@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 from tqdm import tqdm
 
 import src.utils as utils
@@ -155,3 +156,7 @@ def save_grid(grid, fname, cell_width):
 			f.write("%d " % grid[i][j])
 		f.write("\n")
 	f.close()
+
+def save_image(grid, fname):
+	new_grid = np.asarray(127 - grid, dtype=np.uint8)
+	cv2.imwrite(fname, new_grid)
