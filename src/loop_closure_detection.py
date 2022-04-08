@@ -102,8 +102,8 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 		i, j = good_matches[idx]
 		if (i not in points_used) or (j not in points_used):
 			old_i, old_j = i, j
-			i *= 3
-			j *= 3
+			i *= image_rate
+			j *= image_rate
 		# if True:
 			# estimated_tf = utils.pose_to_mat(pose_graph.poses[j] - pose_graph.poses[i])
 			estimated_tf = np.eye(3)
