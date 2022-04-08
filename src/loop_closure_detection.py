@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.spatial
 import cv2
+from tqdm import tqdm
 
 import src.icp as icp
 import src.utils as utils
@@ -35,7 +36,7 @@ def detect_proximity(pose_graph, lidar_points, min_dist_along_path=2, max_dist=1
 				points_used.add(i)
 				points_used.add(j)
 
-def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5, err_thresh=150, n_matches=10):
+def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate=1, min_dist_along_path=5, image_err_thresh=125, n_matches=10, icp_err_thresh=30):
 	pairwise_dists = scipy.spatial.distance.cdist(pose_graph.poses[:,:2], pose_graph.poses[:,:2])
 	dist_traveled = np.cumsum(np.diag(pairwise_dists, k=1))
 	dist_traveled = np.append([0],dist_traveled)
@@ -52,7 +53,7 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 	descriptors = []
 	# sift = cv2.SIFT_create()
 	orb = cv2.ORB_create()
-	for i in range(0, len(greys), image_rate):
+	for i in tqdm(range(0, len(greys), image_rate)):
 		# kp, des = sift.detectAndCompute(greys[i], None)
 		kp, des = orb.detectAndCompute(greys[i], None)
 		keypoints.append(kp)
@@ -60,7 +61,8 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 
 	print("Matching keypoints")
 	dist_mat = np.full((len(descriptors), len(descriptors)), np.inf)
-	for i in range(0, len(descriptors)):
+	for i in tqdm(range(0, len(descriptors))):
+		# print("Image %d" % i)
 		for j in range(start_idx[i], len(descriptors)):
 			bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 			matches = bf.match(descriptors[i], descriptors[j])
@@ -70,31 +72,36 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 				continue
 
 			dist_mat[i,j] = np.sum([match.distance for match in matches[:n_matches]])
+	threshed = dist_mat < image_err_thresh
 
 	import matplotlib.pyplot as plt
-	plt.imshow(dist_mat)
-	plt.show()
-	threshed = dist_mat < err_thresh
-	plt.imshow(threshed)
-	plt.show()
+	fig, ax = plt.subplots()
+	ax.imshow(dist_mat)
+	plt.savefig("dist_mat.png")
+	plt.close(fig)
+	fig, ax = plt.subplots()
+	ax.imshow(threshed)
+	plt.savefig("dist_mat_threshed.png")
+	plt.close(fig)
 
 	good_matches = []
 	for j in range(dist_mat.shape[1]):
 		i = np.argmin(dist_mat[:,j])
-		if dist_mat[i,j] < err_thresh:
+		if dist_mat[i,j] < image_err_thresh:
+			print(dist_mat[i,j])
 			good_matches.append([i, j])
 	print(good_matches)
 
 	points_used = set()
 	for i, j in good_matches:
-		if (i not in points_used) and (j not in points_used):
+		if (i not in points_used) or (j not in points_used):
 		# if True:
 			# estimated_tf = utils.pose_to_mat(pose_graph.poses[j] - pose_graph.poses[i])
 			estimated_tf = np.eye(3)
 			pc_prev = np.c_[lidar_points[i], np.ones(len(lidar_points[i]))]
 			pc_current = np.c_[lidar_points[j], np.ones(len(lidar_points[j]))]
 			tfs, error = icp.icp(pc_current, pc_prev, init_transform=estimated_tf, max_iters=100, epsilon=0.05)
-			if error < err_thresh:
+			if error < icp_err_thresh:
 				print("%d %d %f" % (i, j, error))
 				pose_graph.add_constraint(i, j, tfs[-1])
 				points_used.add(i)

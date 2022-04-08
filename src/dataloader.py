@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import lcm
 import sys
+from tqdm import tqdm
 import os
 sys.path.append(sys.path[0] + "/lcmtypes")
 try:
@@ -21,6 +22,7 @@ def get_images(data_folder_name, image_stop):
 	imgs = np.empty((0, 480, 640, 3), dtype=float)
 	timestamps = np.empty(0, dtype=float)
 	
+	print("Loading images...")
 	for line in lines:
 		n, time = line.split(", ")
 		if int(n) > image_stop:

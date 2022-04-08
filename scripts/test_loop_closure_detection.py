@@ -22,11 +22,12 @@ import src.visualization as visualization
 # This is the script that calls everything else. It will take in various command line arguments (such as filename, parameters), and runs SLAM
 
 print("Loading the data...")
-odometry, lidar_points, images = dataloader.parse_lcm_log("./data/EECS_3", load_images=True, image_stop=200)
+odometry, lidar_points, images = dataloader.parse_lcm_log("./data/EECS_3", load_images=True, image_stop=np.inf)
 print("Done!")
 
 start = 11
 dpi = 100
+cell_width = 0.05
 
 odometry = odometry[start:]
 lidar_points = lidar_points[start:]
@@ -50,18 +51,31 @@ fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 
 print("Optimizing pose graph...")
 iters = 0
-max_iters = 25
+max_iters = 100
 while True:
 	iters += 1
 	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters))
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg)
 	visualization.draw_path(ax, pg.poses[:,:2])
-	plt.draw()
-	plt.pause(0.1)
-	# plt.savefig("optim_fame%04d.png" % iters)
+	# plt.draw()
+	# plt.pause(0.1)
+	plt.savefig("optim_fame%04d.png" % iters)
 	print(iters)
 
 	if iters >= max_iters:
 		plt.close(fig)
 		break
+
+print("Recorded %d poses. Creating occupancy grid..." % len(pg.poses))
+og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(pg.poses, lidar_points[:len(pg.poses)], cell_width, kHitOdds=20, kMissOdds=10)
+print("Drawing occupancy grid...")
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
+visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
+plt.savefig("final_map_og.png")
+plt.show()
+
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
+visualization.draw_point_map(ax, pg.poses, lidar_points[:len(pg.poses)])
+plt.savefig("final_map_points.png")
+plt.show()
