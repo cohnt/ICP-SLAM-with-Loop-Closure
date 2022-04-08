@@ -11,6 +11,8 @@ except:
 	from lcmtypes import odometry_t, lidar_t
 
 
+
+
 def read_img(path):
 	image = cv2.imread(path, cv2.COLOR_BGR2RGB)
 	return image
@@ -19,20 +21,22 @@ def read_img(path):
 def get_images(data_folder_name, image_stop):
 	timestamps_file = open(f'{data_folder_name}/image_timestamps.txt', 'r')
 	lines = timestamps_file.readlines()
-	imgs = np.empty((0, 480, 640, 3), dtype=float)
-	timestamps = np.empty(0, dtype=float)
 	
 	print("Loading images...")
 	if image_stop > len(lines):
 		image_stop = len(lines)-1
+
+	imgs = np.zeros((image_stop+1,480,640,3), dtype=np.uint8)
+	timestamps = np.zeros(image_stop+1, dtype=float)
+
 	for i in tqdm(range(0, image_stop+1)):
 		line = lines[i]
 		n, time = line.split(", ")
 		if int(n) > image_stop:
 			break
 		img = read_img(f'{data_folder_name}/raw_images/image{n}.png')
-		imgs = np.append(imgs, np.array([img]), axis=0)
-		timestamps = np.append(timestamps, float(time))
+		imgs[i] = img
+		timestamps[i] = float(time)
 
 	timestamps *= 1E6
 
