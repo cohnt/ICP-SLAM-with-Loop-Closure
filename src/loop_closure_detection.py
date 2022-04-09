@@ -107,7 +107,7 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 		dist_mat[i,j] = dist_mat_s[idx]
 		matched_keypoints[i][j] = deserialize_matches(matched_keypoints_s[idx])
 
-	print("Closest points %f" % np.min(dist_mat))
+	print("Closest images keypoint match error %f" % np.min(dist_mat))
 	threshed = dist_mat < image_err_thresh
 
 	if save_dists:
@@ -151,6 +151,7 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 		j *= image_rate
 
 		tf, error= tfs[idx][-1], errs[idx]
+		# print(error)
 		if error < icp_err_thresh:
 			# print("%d %d %f" % (i, j, error))
 			pose_graph.add_constraint(i, j, tf)
