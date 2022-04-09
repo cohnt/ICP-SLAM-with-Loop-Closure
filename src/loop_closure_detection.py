@@ -139,7 +139,12 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 		epsilon=0.05
 	) for i, j in tqdm(good_matches)))
 
-	for idx in range(len(good_matches)):
+	if save_matches:
+		print("Saving matched images")
+		iterable = tqdm(range(len(good_matches)))
+	else:
+		iterable = range(len(good_matches))
+	for idx in iterable:
 		i, j = good_matches[idx]
 		old_i, old_j = i, j
 		i *= image_rate
