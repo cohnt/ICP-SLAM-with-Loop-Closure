@@ -257,7 +257,7 @@ if program_start != "scan_matching":
 	pg = pose_graph.PoseGraph(None)
 	pg.load(pose_graph_fname)
 
-if program_start == "loop_closure":
+if program_start == "scan_matching" or program_start == "loop_closure":
 	print("Detecting loop closures")
 	loop_closure_detection.detect_images_direct_similarity(pg, lidar_points, images, min_dist_along_path=min_dist_along_path,
 		save_dists=save_dist_mat, save_matches=save_matches, image_rate=image_rate, n_matches=n_matches, image_err_thresh=image_err_thresh,
@@ -272,7 +272,7 @@ if program_start == "loop_closure":
 if program_end == "loop_closure":
 	exit(0)
 
-if program_start == "optimization":
+if program_start == "scan_matching" or program_start == "loop_closure" or program_start == "optimization":
 	print("Optimizing pose graph...")
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	for iters in tqdm(range(optimization_max_iters)):
