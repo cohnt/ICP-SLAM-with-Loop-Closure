@@ -55,28 +55,28 @@ tfs, errs = zip(*parallel(delayed(icp.icp)(
 
 corrected_poses = np.array([odometry[0]])
 
-# print("Saving ICP images...")
-# # fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
-# for i in tqdm(range(len(corrected_poses), len(odometry))):
-# 	real_tf = tfs[i-1][-1]
-# 	real_prev_pose = utils.pose_to_mat(corrected_poses[-1])
-# 	real_pose = real_prev_pose @ real_tf
-# 	real_odom = utils.mat_to_pose(real_pose)
-# 	corrected_poses = np.vstack((corrected_poses, real_odom))
+print("Saving ICP images...")
+# fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
+for i in tqdm(range(len(corrected_poses), len(odometry))):
+	real_tf = tfs[i-1][-1]
+	real_prev_pose = utils.pose_to_mat(corrected_poses[-1])
+	real_pose = real_prev_pose @ real_tf
+	real_odom = utils.mat_to_pose(real_pose)
+	corrected_poses = np.vstack((corrected_poses, real_odom))
 
-# 	pc_prev = np.c_[lidar_points[i],np.ones(len(lidar_points[i]))]
-# 	pc_current = np.c_[lidar_points[i-1],np.ones(len(lidar_points[i-1]))]
-# 	pc1 = (utils.pose_to_mat(corrected_poses[-2]) @ pc_prev.T).T
-# 	pc2 = (utils.pose_to_mat(corrected_poses[-1]) @ pc_current.T).T
-# 	ax.scatter(pc1[::10,0], pc1[::10,1], color="red", s=0.1)
-# 	ax.scatter(pc2[::10,0], pc2[::10,1], color="blue", s=0.1)
+	pc_prev = np.c_[lidar_points[i],np.ones(len(lidar_points[i]))]
+	pc_current = np.c_[lidar_points[i-1],np.ones(len(lidar_points[i-1]))]
+	pc1 = (utils.pose_to_mat(corrected_poses[-2]) @ pc_prev.T).T
+	pc2 = (utils.pose_to_mat(corrected_poses[-1]) @ pc_current.T).T
+	ax.scatter(pc1[::10,0], pc1[::10,1], color="red", s=0.1)
+	ax.scatter(pc2[::10,0], pc2[::10,1], color="blue", s=0.1)
 	
-# 	visualization.draw_path(ax, corrected_poses)
-# 	ax.set_aspect("equal")
+	visualization.draw_path(ax, corrected_poses)
+	ax.set_aspect("equal")
 	
-# 	# plt.draw()
-# 	# plt.pause(0.1)
-# 	plt.savefig("icp_frame%04d.png" % i)
+	# plt.draw()
+	# plt.pause(0.1)
+	plt.savefig("icp_frame%04d.png" % i)
 
 # plt.close(fig)
 
