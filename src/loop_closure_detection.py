@@ -156,7 +156,7 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 			# print("%d %d %f" % (i, j, error))
 			pose_graph.add_constraint(i, j, tf)
 			if save_matches:
-				match_img = cv2.drawMatches(greys[old_i],keypoints[old_i],greys[old_j],keypoints[old_j],good_matches_keypoints[idx],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+				match_img = cv2.drawMatches(greys[i],keypoints[old_i],greys[j],keypoints[old_j],good_matches_keypoints[idx],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 				fig, ax = plt.subplots()
 				ax.imshow(match_img)
 				plt.savefig("match_%d_%d_%f.png" % (i, j, dist_mat[old_i,old_j]))
