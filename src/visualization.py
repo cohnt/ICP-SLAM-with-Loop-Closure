@@ -71,20 +71,21 @@ def draw_icp_iteration(ax, pc1, pc2, correspondences=np.array([])):
 	ax.scatter(pc1[:,0], pc1[:,1], color="red")
 	ax.scatter(pc2[:,0], pc2[:,1], color="blue")
 
-def gen_and_save_map(poses, points, name, cell_width, kHitOdds, kMissOdds, dpi, figsize=(19.2, 10.8), save_map_files=True):
-	print("Producing %s map..." % name)
-	og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(poses, points, cell_width, kHitOdds=kHitOdds, kMissOdds=kMissOdds)
-	print("Drawing occupancy grid...")
-	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-	draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
-	plt.savefig("%s_map_og.png" % name)
-	draw_path(ax, poses)
-	plt.savefig("%s_map_og_path.png" % name)
-	plt.close(fig)
+def gen_and_save_map(poses, points, name, cell_width, kHitOdds, kMissOdds, dpi, figsize=(19.2, 10.8), save_map_files=True, skip_occupancy_grid=False):
+	if not skip_occupancy_grid:
+		print("Producing %s map..." % name)
+		og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(poses, points, cell_width, kHitOdds=kHitOdds, kMissOdds=kMissOdds)
+		print("Drawing occupancy grid...")
+		fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+		draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
+		plt.savefig("%s_map_og.png" % name)
+		draw_path(ax, poses)
+		plt.savefig("%s_map_og_path.png" % name)
+		plt.close(fig)
 
-	produce_occupancy_grid.save_image(og, "%s_og.png" % name)
-	if save_map_files:
-		produce_occupancy_grid.save_grid(og, "%s.map" % name, cell_width)
+		produce_occupancy_grid.save_image(og, "%s_og.png" % name)
+		if save_map_files:
+			produce_occupancy_grid.save_grid(og, "%s.map" % name, cell_width)
 
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	draw_point_map(ax, poses, points)

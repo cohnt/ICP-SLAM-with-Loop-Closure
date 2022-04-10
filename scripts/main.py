@@ -131,6 +131,9 @@ parser.add_argument("--miss-odds", default=2, type=int,
 parser.add_argument("--produce-odometry-map", action="store_true",
  help="Generate and save maps from the initial odometry estimates. Only really useful as a baseline."
 )
+parser.add_argument("--skip-occupancy-grid", action="store_true",
+ help="Skip producing the occupancy grid maps."
+)
 parser.add_argument("--save-icp-images", action="store_true",
  help="Save images of each ICP iteration."
 )
@@ -188,6 +191,7 @@ save_matches = bool(args.save_matches)
 save_dist_mat = bool(args.save_dist_mat)
 save_map_files = bool(args.save_map_files)
 optimization_max_iters = args.optimization_max_iters
+skip_occupancy_grid = args.skip_occupancy_grid
 
 if program_start != "scan_matching":
 	if pose_graph_fname is None:
@@ -203,7 +207,7 @@ lidar_points = lidar_points[dataset_start:]
 images = images[dataset_start:]
 
 if make_odometry_maps:
-	visualization.gen_and_save_map(odometry, lidar_points, "odometry", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files)
+	visualization.gen_and_save_map(odometry, lidar_points, "odometry", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid)
 
 if program_start == "scan_matching":
 	if program_use_icp:
@@ -241,7 +245,7 @@ if program_start == "scan_matching":
 				plt.savefig("icp_frame%04d.png" % i)
 			plt.close(fig)
 
-		visualization.gen_and_save_map(corrected_poses, lidar_points, "icp", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files)
+		visualization.gen_and_save_map(corrected_poses, lidar_points, "icp", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid)
 		pg = pose_graph.PoseGraph(corrected_poses)
 		pg.save("icp_pose_graph.pickle")
 	else:
@@ -284,7 +288,7 @@ if program_start == "scan_matching" or program_start == "loop_closure" or progra
 	plt.close(fig)
 	pose_graph_optimization.recompute_pose_graph_orientation(pg)
 
-	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files)
+	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid)
 	pg.save("optim.pickle")
 
 if program_end == "optimization":
