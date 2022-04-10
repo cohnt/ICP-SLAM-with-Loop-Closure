@@ -277,6 +277,7 @@ if program_start == "scan_matching" or program_start == "loop_closure":
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	visualization.draw_pose_graph(ax, pg)
 	visualization.draw_path(ax, pg.poses[:,:2])
+	ax.set_aspect("equal")
 	plt.savefig("init_pose_graph.png")
 
 if program_end == "loop_closure":
@@ -290,6 +291,7 @@ if program_start == "scan_matching" or program_start == "loop_closure" or progra
 		ax.cla()
 		visualization.draw_pose_graph(ax, pg, draw_orientation=True)
 		visualization.draw_path(ax, pg.poses[:,:2])
+		ax.set_aspect("equal")
 		plt.savefig("optim_fame%04d.png" % iters)
 	plt.close(fig)
 	print("Recomputing pose orientations")
