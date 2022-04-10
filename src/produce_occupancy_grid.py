@@ -144,7 +144,7 @@ def grid_mle(grid, unknown_empty=True):
 	grid = grid.copy()
 	grid[grid > 0] = 127
 	grid[grid < 0] = -128
-	grid[grid == 0] = -128 if unknown_empty else 127
+	# grid[grid == 0] = -128 if unknown_empty else 127
 	return grid
 
 def save_grid(grid, fname, cell_width):

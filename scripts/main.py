@@ -135,7 +135,7 @@ parser.add_argument("--skip-occupancy-grid", action="store_true",
  help="Skip producing the occupancy grid maps."
 )
 parser.add_argument("--save-icp-images", action="store_true",
- help="Save images of each ICP iteration."
+ help="Save images of each ICP iteration. This is very slow for large maps."
 )
 parser.add_argument("--image-pointcloud-downsample", default=10, type=int,
  help="Downsampling applied to point clouds before saving images. 1 will take all points, 2 will take,\
@@ -157,7 +157,8 @@ parser.add_argument("--optimization-max-iters", default=50, type=int,
  help="Maximum number of iterations for the pose graph optimization."
 )
 parser.add_argument("--occupancy-grid-mle", action="store_true",
- help="Take the MLE of each grid square in the occupancy grid (either obstacle or not)."
+ help="Take the MLE of each grid square in the occupancy grid (either obstacle or not). Grid squares\
+ with no information (i.e. the probability is precisely 0.5) will remain unchanged."
 )
 
 args = parser.parse_args()
