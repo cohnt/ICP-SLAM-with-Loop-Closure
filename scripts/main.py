@@ -30,7 +30,7 @@ except:
 # 3) Find loop closures with image keypoints, and add to pose graph
 # 4) Optimize pose graph
 
-# Ways to change the flow...
+# Ways to change the flow
 # -Use a prelearned pose graph as input to step 3
 # -Use a prelearned pose graph as input to step 4
 # -Skip ICP and just use odometry for step 2
@@ -119,7 +119,7 @@ parser.add_argument("--loop-closure-icp-error", default=30, type=float,
 parser.add_argument("--keypoint-n-matches", default=20, type=int,
  help="The number of keypoints to match across images when detecting loop closures."
 )
-parser.add_argument("--cell-width", default=0.05, type=float,
+parser.add_argument("--cell-width", default=0.1, type=float,
  help="The width of the grid cells in the produced occupancy grid maps, in meters."
 )
 parser.add_argument("--hit-odds", default=5, type=int,
@@ -198,9 +198,8 @@ if program_start != "scan_matching":
 		print("Error: If starting after scan matching, a pose graph must be passed in using the command line option --pose-graph.")
 		exit(1)
 
-print("Loading the data...")
+print("Loading the data")
 odometry, lidar_points, images = dataloader.parse_lcm_log(dataset_fname, load_images=True, image_stop=dataset_end, n_jobs=n_jobs)
-print("Done!")
 
 odometry = odometry[dataset_start:]
 lidar_points = lidar_points[dataset_start:]
@@ -211,7 +210,7 @@ if make_odometry_maps:
 
 if program_start == "scan_matching":
 	if program_use_icp:
-		print("Aligning poses with ICP...")
+		print("Aligning poses with ICP")
 		raw_tfs = odometry[1:] - odometry[:-1]
 		parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
 		tfs, errs = zip(*parallel(delayed(icp.icp)(
@@ -232,7 +231,7 @@ if program_start == "scan_matching":
 			corrected_poses[i] = real_odom
 
 		if save_icp_images:
-			print("Saving ICP images...")
+			print("Saving ICP images")
 			fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 			for i in tqdm(range(len(odometry))):
 				pc_raw = np.c_[lidar_points[i],np.ones(len(lidar_points[i]))]
@@ -277,16 +276,17 @@ if program_end == "loop_closure":
 	exit(0)
 
 if program_start == "scan_matching" or program_start == "loop_closure" or program_start == "optimization":
-	print("Optimizing pose graph...")
+	print("Optimizing pose graph")
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	for iters in tqdm(range(optimization_max_iters)):
-		pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=2/float(iters+1))
+		pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters+1))
 		ax.cla()
 		visualization.draw_pose_graph(ax, pg, draw_orientation=True)
 		visualization.draw_path(ax, pg.poses[:,:2])
 		plt.savefig("optim_fame%04d.png" % iters)
 	plt.close(fig)
-	pose_graph_optimization.recompute_pose_graph_orientation(pg)
+	print("Recomputing pose orientations")
+	pose_graph_optimization.recompute_pose_graph_orientation(pg, lidar_points, icp_max_iters, icp_epsilon, n_jobs)
 
 	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid)
 	pg.save("optim.pickle")
