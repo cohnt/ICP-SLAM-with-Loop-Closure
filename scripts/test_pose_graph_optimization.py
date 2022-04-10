@@ -78,7 +78,7 @@ while True:
 	iters += 1
 	if iters % 5 == 0:
 		pg.flip()
-	pose_graph_optimization.pose_graph_optimization_step(pg)
+	pose_graph_optimization.pose_graph_optimization_step_sgd(pg)
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg, draw_nodes=True, draw_orientation=True)
 	visualization.draw_path(ax, pg.poses[:,:2])

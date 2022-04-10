@@ -156,6 +156,9 @@ parser.add_argument("--save-map-files", action="store_true",
 parser.add_argument("--optimization-max-iters", default=50, type=int,
  help="Maximum number of iterations for the pose graph optimization."
 )
+parser.add_argument("--occupancy-grid-mle", action="store_true",
+ help="Take the MLE of each grid square in the occupancy grid (either obstacle or not)."
+)
 
 args = parser.parse_args()
 
@@ -192,6 +195,7 @@ save_dist_mat = bool(args.save_dist_mat)
 save_map_files = bool(args.save_map_files)
 optimization_max_iters = args.optimization_max_iters
 skip_occupancy_grid = args.skip_occupancy_grid
+occupancy_grid_mle = bool(args.occupancy_grid_mle)
 
 if program_start != "scan_matching":
 	if pose_graph_fname is None:
@@ -206,7 +210,8 @@ lidar_points = lidar_points[dataset_start:]
 images = images[dataset_start:]
 
 if make_odometry_maps:
-	visualization.gen_and_save_map(odometry, lidar_points, "odometry", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid)
+	visualization.gen_and_save_map(odometry, lidar_points, "odometry", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize,
+		save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid, mle=occupancy_grid_mle)
 
 if program_start == "scan_matching":
 	if program_use_icp:
@@ -244,7 +249,8 @@ if program_start == "scan_matching":
 				plt.savefig("icp_frame%04d.png" % i)
 			plt.close(fig)
 
-		visualization.gen_and_save_map(corrected_poses, lidar_points, "icp", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid)
+		visualization.gen_and_save_map(corrected_poses, lidar_points, "icp", cell_width, kHitOdds, kMissOdds, dpi,
+			figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid, mle=occupancy_grid_mle)
 		pg = pose_graph.PoseGraph(corrected_poses)
 		pg.save("icp_pose_graph.pickle")
 	else:
@@ -279,7 +285,7 @@ if program_start == "scan_matching" or program_start == "loop_closure" or progra
 	print("Optimizing pose graph")
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	for iters in tqdm(range(optimization_max_iters)):
-		pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters+1))
+		pose_graph_optimization.pose_graph_optimization_step_sgd(pg, learning_rate=1/float(iters+1))
 		ax.cla()
 		visualization.draw_pose_graph(ax, pg, draw_orientation=True)
 		visualization.draw_path(ax, pg.poses[:,:2])
@@ -288,7 +294,8 @@ if program_start == "scan_matching" or program_start == "loop_closure" or progra
 	print("Recomputing pose orientations")
 	pose_graph_optimization.recompute_pose_graph_orientation(pg, lidar_points, icp_max_iters, icp_epsilon, n_jobs)
 
-	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid)
+	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize,
+		save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid, mle=occupancy_grid_mle)
 	pg.save("optim.pickle")
 
 if program_end == "optimization":

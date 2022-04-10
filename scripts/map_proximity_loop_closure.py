@@ -125,7 +125,7 @@ iters = 0
 max_iters = 25
 while True:
 	iters += 1
-	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=1/float(iters))
+	pose_graph_optimization.pose_graph_optimization_step_sgd(pg, learning_rate=1/float(iters))
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg)
 	visualization.draw_path(ax, pg.poses[:,:2])

@@ -4,7 +4,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 import src.icp as icp
 
-def pose_graph_optimization_step(pose_graph, learning_rate=1, loop_closure_uncertainty=0.2):
+def pose_graph_optimization_step_sgd(pose_graph, learning_rate=1, loop_closure_uncertainty=0.2):
 	gamma = np.full(3, np.inf)
 	N = pose_graph.graph.number_of_nodes()
 	M = np.zeros((N, 3))
@@ -81,3 +81,4 @@ def construct_R(pose_graph, idx):
 		[0, 0, 1]
 	])
 	return R
+

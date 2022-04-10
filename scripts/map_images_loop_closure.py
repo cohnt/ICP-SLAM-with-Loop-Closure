@@ -97,7 +97,7 @@ print("Optimizing pose graph...")
 fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 max_iters = 100
 for iters in tqdm(range(max_iters)):
-	pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=2/float(iters+1))
+	pose_graph_optimization.pose_graph_optimization_step_sgd(pg, learning_rate=2/float(iters+1))
 	ax.cla()
 	visualization.draw_pose_graph(ax, pg)
 	visualization.draw_path(ax, pg.poses[:,:2])
