@@ -119,13 +119,13 @@ parser.add_argument("--loop-closure-icp-error", default=30, type=float,
 parser.add_argument("--keypoint-n-matches", default=20, type=int,
  help="The number of keypoints to match across images when detecting loop closures."
 )
-parser.add_argument("--cell-width", default=0.25, type=float,
+parser.add_argument("--cell-width", default=0.05, type=float,
  help="The width of the grid cells in the produced occupancy grid maps, in meters."
 )
-parser.add_argument("--hit-odds", default=20, type=int,
+parser.add_argument("--hit-odds", default=5, type=int,
  help="The hit odds used by the occupancy grid mapper. Should be at least twice as large as --miss-odds."
 )
-parser.add_argument("--miss-odds", default=10, type=int,
+parser.add_argument("--miss-odds", default=2, type=int,
  help="The miss odds used by the occupancy grid mapper. Should be at most half as large as --miss-odds."
 )
 parser.add_argument("--produce-odometry-map", action="store_true",
@@ -278,10 +278,11 @@ if program_start == "scan_matching" or program_start == "loop_closure" or progra
 	for iters in tqdm(range(optimization_max_iters)):
 		pose_graph_optimization.pose_graph_optimization_step(pg, learning_rate=2/float(iters+1))
 		ax.cla()
-		visualization.draw_pose_graph(ax, pg)
+		visualization.draw_pose_graph(ax, pg, draw_orientation=True)
 		visualization.draw_path(ax, pg.poses[:,:2])
 		plt.savefig("optim_fame%04d.png" % iters)
 	plt.close(fig)
+	pose_graph_optimization.recompute_pose_graph_orientation(pg)
 
 	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize, save_map_files=save_map_files)
 	pg.save("optim.pickle")
