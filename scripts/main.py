@@ -11,7 +11,6 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 import argparse
 
-import src.pose_graph_optimization as pose_graph_optimization
 try:
 	import src.dataloader as dataloader
 	import src.icp as icp
@@ -286,8 +285,6 @@ if program_end == "loop_closure":
 
 if program_start == "scan_matching" or program_start == "loop_closure" or program_start == "optimization":
 	print("Optimizing pose graph")
-	pose_graph_optimization.optimize_minisam(pg)
-
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	for iters in tqdm(range(optimization_max_iters)):
 		pose_graph_optimization.pose_graph_optimization_step_sgd(pg, learning_rate=1/float(iters+1))
