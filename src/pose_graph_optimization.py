@@ -82,3 +82,67 @@ def construct_R(pose_graph, idx):
 	])
 	return R
 
+def optimize_minisam(pose_graph):
+	from minisam import FactorGraph, LevenbergMarquardtOptimizerParams, LevenbergMarquardtOptimizer, Variables,\
+	PriorFactor, MarginalCovarianceSolver, MarginalCovarianceSolverStatus, DiagonalLoss, BetweenFactor, key,\
+	NonlinearOptimizationStatus
+	from minisam.sophus import SE2, SO2
+	import matplotlib.pyplot as plt
+
+	# plot SE2 with covariance
+	def plotSE2(pose, vehicle_size=0.5, line_color='k', vehicle_color='r'):
+		# plot vehicle
+		p1 = pose.translation() + pose.so2() * np.array([1, 0]) * vehicle_size
+		p2 = pose.translation() + pose.so2() * np.array([-0.5, -0.5]) * vehicle_size
+		p3 = pose.translation() + pose.so2() * np.array([-0.5, 0.5]) * vehicle_size
+		line = plt.Polygon([p1, p2, p3], closed=True, fill=True, edgecolor=line_color, facecolor=vehicle_color)
+		plt.gca().add_line(line)
+
+	# See: https://minisam.readthedocs.io/pose_graph_2d.html
+	graph = FactorGraph()
+	priorLoss = DiagonalLoss.Sigmas(np.array([1.0, 1.0, 0.1])) # prior loss function
+	graph.add(PriorFactor(key('x', 0), SE2(SO2(0), np.array([0, 0])), priorLoss))
+
+	odomLoss = DiagonalLoss.Sigmas(np.array([0.5, 0.5, 0.1])) # odometry measurement loss function
+	loopLoss = DiagonalLoss.Sigmas(np.array([0.5, 0.5, 0.1])) # loop closure measurement loss function
+	for a, b, tf in pose_graph.graph.edges(data="object"):
+		x = tf[0,2]
+		y = tf[1,2]
+		theta = np.arctan2(tf[1][0], tf[0][0])
+		graph.add(BetweenFactor(key('x', a), key('x', b), SE2(SO2(theta), np.array([x, y])),
+			odomLoss if np.abs(a - b) == 1 else loopLoss
+		))
+	
+	initials = Variables()
+	for i in range(len(pose_graph.poses)):
+		pose = pose_graph.poses[i]
+		initials.add(key('x', i), SE2(SO2(pose[2]), pose[0:2]))
+
+	opt_param = LevenbergMarquardtOptimizerParams()
+	opt = LevenbergMarquardtOptimizer(opt_param)
+
+	# opt_param = GaussNewtonOptimizerParams()
+	# opt = GaussNewtonOptimizer(opt_param)
+
+	# opt_param = DoglegOptimizerParams()
+	# opt = DoglegOptimizer(opt_param)
+
+	results = Variables()
+	status = opt.optimize(graph, initials, results)
+
+	if status != NonlinearOptimizationStatus.SUCCESS:
+		print("optimization error: ", status)
+
+	# Calculate marginal covariances for all poses
+	mcov_solver = MarginalCovarianceSolver()
+
+	status = mcov_solver.initialize(graph, results)
+	if status != MarginalCovarianceSolverStatus.SUCCESS:
+		print("maginal covariance error")
+		print(status)
+
+	fig, ax = plt.subplots()
+	for i in range(len(pose_graph.poses)):
+		plotSE2(results.at(key('x', i)))
+	plt.axis("equal")
+	plt.show()
