@@ -57,3 +57,21 @@ class PoseGraph():
 	def load(self, fname):
 		with open(fname, "rb") as f:
 			self.poses, self.graph = pickle.load(f)
+
+	def export_g2o(self, fname):
+		with open(fname, "w") as f:
+			for i in range(len(self.poses)):
+				f.write("VERTEX_SE2 %d %f %f %f\n" % (i, self.poses[i][0], self.poses[i][1], self.poses[i][2]))
+			odom_inf_mat = np.eye(3) * 2 # TODO: Make better?
+			loop_closure_inf_mat = np.eye(3) * 5 # TODO: Make better?
+			for a, b, tf in self.graph.edges(data="object"):
+				inf_mat = odom_inf_mat if np.abs(b - a) == 1 else loop_closure_inf_mat
+				f.write("EDGE_SE2 %d %d %f %f %f %f %f %f %f %f %f\n" % (
+					a, b,
+					tf[0,2], tf[1,2], np.arctan2(tf[1,0], tf[0,0]),
+					inf_mat[0,0], inf_mat[0,1], inf_mat[0,2], inf_mat[1,1], inf_mat[1,2], inf_mat[2,2]
+				))
+
+	def load_g2o(self, fname):
+		# Heavily inspired by https://github.com/JeffLIrion/python-graphslam/blob/master/graphslam/load.py
+		pass # TODO

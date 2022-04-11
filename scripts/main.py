@@ -254,11 +254,13 @@ if program_start == "scan_matching":
 			figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid, mle=occupancy_grid_mle)
 		pg = pose_graph.PoseGraph(corrected_poses)
 		pg.save("icp_pose_graph.pickle")
+		pg.export_g2o("icp_pose_graph.g2o")
 	else:
 		# (Not using ICP)
 		corrected_poses = odometry.copy()
 		pg = pose_graph.PoseGraph(corrected_poses)
 		pg.save("odometry_pose_graph.pickle")
+		pg.export_g2o("odometry_pose_graph.g2o")
 
 if program_end == "scan_matching":
 	exit(0)
@@ -273,6 +275,7 @@ if program_start == "scan_matching" or program_start == "loop_closure":
 		save_dists=save_dist_mat, save_matches=save_matches, image_rate=image_rate, n_matches=n_matches, image_err_thresh=image_err_thresh,
 		icp_err_thresh=loop_closure_icp_error)
 	pg.save("loop_closure_pose_graph.pickle")
+	pg.export_g2o("loop_closure_pose_graph.g2o")
 
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	visualization.draw_pose_graph(ax, pg)
@@ -300,6 +303,7 @@ if program_start == "scan_matching" or program_start == "loop_closure" or progra
 	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize,
 		save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid, mle=occupancy_grid_mle)
 	pg.save("optim.pickle")
+	pg.export_g2o("optim.g2o")
 
 if program_end == "optimization":
 	exit(0)
