@@ -4,7 +4,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 import src.icp as icp
 
-def pose_graph_optimization_step_sgd(pose_graph, learning_rate=1, loop_closure_uncertainty=0.2):
+def pose_graph_optimization_step_sgd(pose_graph, learning_rate=1, loop_closure_uncertainty=0.1):
 	gamma = np.full(3, np.inf)
 	N = pose_graph.graph.number_of_nodes()
 	M = np.zeros((N, 3))
@@ -56,20 +56,20 @@ def recompute_pose_graph_orientation(pose_graph, lidar_points, icp_max_iters, ic
 			vec = vec / np.linalg.norm(vec)
 			pose_graph.poses[i][2] = np.arctan2(vec[1], vec[0])
 
-	parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
-	tfs, errs = zip(*parallel(delayed(icp.icp)(
-		np.c_[lidar_points[i],np.ones(len(lidar_points[i]))],
-		np.c_[lidar_points[i-1],np.ones(len(lidar_points[i-1]))],
-		init_transform=utils.pose_to_mat(pose_graph.poses[i] - pose_graph.poses[i-1]),
-		max_iters=icp_max_iters,
-		epsilon=icp_epsilon
-	) for i in tqdm(range(1, len(pose_graph.poses)))))
+	# parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
+	# tfs, errs = zip(*parallel(delayed(icp.icp)(
+	# 	np.c_[lidar_points[i],np.ones(len(lidar_points[i]))],
+	# 	np.c_[lidar_points[i-1],np.ones(len(lidar_points[i-1]))],
+	# 	init_transform=utils.pose_to_mat(pose_graph.poses[i] - pose_graph.poses[i-1]),
+	# 	max_iters=icp_max_iters,
+	# 	epsilon=icp_epsilon
+	# ) for i in tqdm(range(1, len(pose_graph.poses)))))
 
-	for i in range(len(pose_graph.poses)-1, 1-1, -1):
-	# for i in range(1, len(pose_graph.poses)):
-		real_tf = tfs[i-1][-1]
-		dtheta = np.arctan2(real_tf[1][0], real_tf[0][0])
-		pose_graph.poses[i][2] = pose_graph.poses[i-1][2]
+	# for i in range(len(pose_graph.poses)-1, 1-1, -1):
+	# # for i in range(1, len(pose_graph.poses)):
+	# 	real_tf = tfs[i-1][-1]
+	# 	dtheta = np.arctan2(real_tf[1][0], real_tf[0][0])
+	# 	pose_graph.poses[i][2] = pose_graph.poses[i-1][2] + dtheta
 
 def construct_R(pose_graph, idx):
 	theta =pose_graph.poses[idx][2]
