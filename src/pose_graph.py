@@ -71,25 +71,3 @@ class PoseGraph():
 					tf[0,2], tf[1,2], np.arctan2(tf[1,0], tf[0,0]),
 					inf_mat[0,0], inf_mat[0,1], inf_mat[0,2], inf_mat[1,1], inf_mat[1,2], inf_mat[2,2]
 				))
-
-	def load_g2o(self, fname):
-		# Heavily inspired by https://github.com/JeffLIrion/python-graphslam/blob/master/graphslam/load.py
-		pass # TODO
-		# with open(fname, "r") as f:
-		# 	for line in f.readlines():
-		# 		if line.startswith("VERTEX_SE2"):
-		# 			numbers = line[10:].split()
-		# 			arr = np.array([float(number) for number in numbers[1:]], dtype=np.float64)
-		# 			p = PoseSE2(arr[:2], arr[2])
-		# 			v = Vertex(int(numbers[0]), p)
-		# 			vertices.append(v)
-		# 			continue
-		# 		if line.startswith("EDGE_SE2"):
-		# 			numbers = line[9:].split()
-		# 			arr = np.array([float(number) for number in numbers[2:]], dtype=np.float64)
-		# 			vertex_ids = [int(numbers[0]), int(numbers[1])]
-		# 			estimate = PoseSE2(arr[:2], arr[2])
-		# 			information = upper_triangular_matrix_to_full_matrix(arr[3:], 3)
-		# 			e = EdgeOdometry(vertex_ids, information, estimate)
-		# 			edges.append(e)
-		# 			continue
