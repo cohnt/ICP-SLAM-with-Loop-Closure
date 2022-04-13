@@ -151,12 +151,12 @@ def save_grid(grid, fname, cell_width):
 	# Saves the grid into a map file, following the EECS 467 convention
 	f = open(fname, "w")
 	f.write("%d %d %d %d %f\n" % (0, 0, grid.shape[1], grid.shape[0], cell_width))
-	for i in range(grid.shape[0]):
+	for i in range(grid.shape[0]-1, 0-1, -1):
 		for j in range(grid.shape[1]):
 			f.write("%d " % grid[i][j])
 		f.write("\n")
 	f.close()
 
 def save_image(grid, fname):
-	new_grid = np.asarray(127 - grid, dtype=np.uint8)
+	new_grid = np.asarray(127 - grid, dtype=np.uint8)[::-1,:]
 	cv2.imwrite(fname, new_grid)
