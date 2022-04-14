@@ -1,6 +1,8 @@
 #######################
 # Fix import issues   #
 import sys            #
+import traceback
+
 sys.path.append(".")  #
 sys.path.append("..") #
 #######################
@@ -20,8 +22,9 @@ try:
 	import src.produce_occupancy_grid as produce_occupancy_grid
 	import src.utils as utils
 	import src.visualization as visualization
-except:
+except Exception as e:
 	print("Failed to import source files. Make sure this script is run from the root of the repository, or from within the scripts folder!")
+	traceback.print_exc()
 	exit(1)
 
 # Overall flow for the main function, when used to do everything in full
