@@ -163,6 +163,10 @@ parser.add_argument("--occupancy-grid-mle", action="store_true",
  help="Take the MLE of each grid square in the occupancy grid (either obstacle or not). Grid squares\
  with no information (i.e. the probability is precisely 0.5) will remain unchanged."
 )
+parser.add_argument("--manual-loop-closures",
+ help="File containing manual loop closure annotations. File is just a text file where each row contains two\
+ numbers corresponding to the images that a loop closure constraint should be added to."
+)
 
 args = parser.parse_args()
 
@@ -200,6 +204,7 @@ save_map_files = bool(args.save_map_files)
 optimization_max_iters = args.optimization_max_iters
 skip_occupancy_grid = args.skip_occupancy_grid
 occupancy_grid_mle = bool(args.occupancy_grid_mle)
+manual_annotation_file = args.manual_loop_closures if args.manual_loop_closures else None
 
 if program_start != "scan_matching":
 	if pose_graph_fname is None:
@@ -273,18 +278,32 @@ if program_start != "scan_matching":
 	pg.load(pose_graph_fname)
 
 if program_start == "scan_matching" or program_start == "loop_closure":
-	print("Detecting loop closures")
-	loop_closure_detection.detect_images_direct_similarity(pg, lidar_points, images, min_dist_along_path=min_dist_along_path,
-		save_dists=save_dist_mat, save_matches=save_matches, image_rate=image_rate, n_matches=n_matches, image_err_thresh=image_err_thresh,
-		icp_err_thresh=loop_closure_icp_error)
+	if manual_annotation_file is None:
+		print("Detecting loop closures")
+		loop_closure_detection.detect_images_direct_similarity(pg, lidar_points, images, min_dist_along_path=min_dist_along_path,
+			save_dists=save_dist_mat, save_matches=save_matches, image_rate=image_rate, n_matches=n_matches, image_err_thresh=image_err_thresh,
+			icp_err_thresh=loop_closure_icp_error)
+	else:
+		print("Adding manual loop closure constraints...")
+		matches = np.loadtxt(manual_annotation_file, dtype=int)
+		for match in matches:
+			i, j = match
+			estimated_tf = np.eye(3)
+			pc_i = np.c_[lidar_points[i], np.ones(len(lidar_points[i]))]
+			pc_j = np.c_[lidar_points[j], np.ones(len(lidar_points[j]))]
+			tfs, error = icp.icp(pc_i, pc_j, init_transform=estimated_tf, max_iters=100, epsilon=0.05)
+			if error < 1:
+				pg.add_constraint(i, j, tfs[-1])
+
 	pg.save("loop_closure_pose_graph.pickle")
 	pg.export_g2o("loop_closure_pose_graph.g2o")
 
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	visualization.draw_pose_graph(ax, pg)
-	visualization.draw_path(ax, pg.poses[:,:2])
+	visualization.draw_path(ax, pg.poses[:, :2])
 	ax.set_aspect("equal")
 	plt.savefig("init_pose_graph.png")
+
 
 if program_end == "loop_closure":
 	exit(0)
