@@ -172,6 +172,9 @@ parser.add_argument("--manual-loop-closures",
  help="File containing manual loop closure annotations. File is just a text file where each row contains two\
  numbers corresponding to the images that a loop closure constraint should be added to."
 )
+parser.add_argument("--icp-recompute", action="store_true",
+ help="Re-estimate the robot orientations after pose graph optimization using ICP."
+)
 
 args = parser.parse_args()
 
@@ -210,6 +213,7 @@ optimization_max_iters = args.optimization_max_iters
 skip_occupancy_grid = args.skip_occupancy_grid
 occupancy_grid_mle = bool(args.occupancy_grid_mle)
 manual_annotation_file = args.manual_loop_closures if args.manual_loop_closures else None
+icp_recompute = bool(args.icp_recompute)
 
 if program_start != "scan_matching":
 	if pose_graph_fname is None:
@@ -325,7 +329,7 @@ if program_start == "scan_matching" or program_start == "loop_closure" or progra
 		plt.savefig("optim_fame%04d.png" % iters)
 	plt.close(fig)
 	print("Recomputing pose orientations")
-	pose_graph_optimization.recompute_pose_graph_orientation(pg, lidar_points, icp_max_iters, icp_epsilon, n_jobs)
+	pose_graph_optimization.recompute_pose_graph_orientation(pg, lidar_points, icp_max_iters, icp_epsilon, n_jobs, icp_recompute=icp_recompute)
 
 	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize,
 		save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid, mle=occupancy_grid_mle)
