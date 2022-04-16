@@ -27,6 +27,10 @@ except Exception as e:
 	traceback.print_exc()
 	exit(1)
 
+with open("cmd.txt", "w") as cmd_file:
+	cmd_file.write("Test run with the command:\n")
+	cmd_file.write("python3 " + " ".join(sys.argv))
+
 # Overall flow for the main function, when used to do everything in full
 # 1) Load the dataset
 # 2) Match poses with ICP, create pose graph
