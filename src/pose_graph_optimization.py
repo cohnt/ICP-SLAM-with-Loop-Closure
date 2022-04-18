@@ -48,7 +48,7 @@ def pose_graph_optimization_step_sgd(pose_graph, learning_rate=1, loop_closure_u
 					dpose = dpose + (beta / M[i,j] / total_weight)
 				pose_graph.poses[i,j] = pose_graph.poses[i,j] + dpose
 
-def recompute_pose_graph_orientation(pose_graph, lidar_points, icp_max_iters, icp_epsilon, n_jobs):
+def recompute_pose_graph_orientation(pose_graph, lidar_points, icp_max_iters, icp_epsilon, n_jobs, icp_recompute=False):
 	N = len(pose_graph.poses)
 	for i in range(1, N-1):
 		vec = pose_graph.poses[i+1][0:2] - pose_graph.poses[i][0:2]
@@ -56,20 +56,22 @@ def recompute_pose_graph_orientation(pose_graph, lidar_points, icp_max_iters, ic
 			vec = vec / np.linalg.norm(vec)
 			pose_graph.poses[i][2] = np.arctan2(vec[1], vec[0])
 
-	# parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
-	# tfs, errs = zip(*parallel(delayed(icp.icp)(
-	# 	np.c_[lidar_points[i],np.ones(len(lidar_points[i]))],
-	# 	np.c_[lidar_points[i-1],np.ones(len(lidar_points[i-1]))],
-	# 	init_transform=utils.pose_to_mat(pose_graph.poses[i] - pose_graph.poses[i-1]),
-	# 	max_iters=icp_max_iters,
-	# 	epsilon=icp_epsilon
-	# ) for i in tqdm(range(1, len(pose_graph.poses)))))
+	if icp_recompute:
+		parallel = Parallel(n_jobs=n_jobs, verbose=0, backend="loky")
+		tfs, errs = zip(*parallel(delayed(icp.icp)(
+			np.c_[lidar_points[i],np.ones(len(lidar_points[i]))],
+			np.c_[lidar_points[i-1],np.ones(len(lidar_points[i-1]))],
+			init_transform=utils.pose_to_mat(pose_graph.poses[i] - pose_graph.poses[i-1]),
+			max_iters=icp_max_iters,
+			epsilon=icp_epsilon,
+			rotation_only=True
+		) for i in tqdm(range(1, len(pose_graph.poses)))))
 
-	# for i in range(len(pose_graph.poses)-1, 1-1, -1):
-	# # for i in range(1, len(pose_graph.poses)):
-	# 	real_tf = tfs[i-1][-1]
-	# 	dtheta = np.arctan2(real_tf[1][0], real_tf[0][0])
-	# 	pose_graph.poses[i][2] = pose_graph.poses[i-1][2] + dtheta
+		for i in range(len(pose_graph.poses)-1, 1-1, -1):
+		# for i in range(1, len(pose_graph.poses)):
+			real_tf = tfs[i-1][-1]
+			dtheta = np.arctan2(real_tf[1][0], real_tf[0][0])
+			pose_graph.poses[i][2] = pose_graph.poses[i-1][2] + dtheta
 
 def construct_R(pose_graph, idx):
 	theta =pose_graph.poses[idx][2]
