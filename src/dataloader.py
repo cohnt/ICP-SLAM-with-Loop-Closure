@@ -61,6 +61,7 @@ def get_all_lcm_data(data_folder_name):
 	point_cloud = []
 	point_cloud_timestamps = np.empty(0, dtype=float)
 
+	# Search for lcm log file in the data folder
 	log_fname = ""
 	for file in os.listdir(data_folder_name):
 		if file.endswith(".log"):
@@ -123,6 +124,10 @@ def parse_lcm_log(data_folder_name, start_time=0, stop_time=np.inf, load_images=
 		
 	return align_data(odometry, odometry_timestamps, point_clouds, point_cloud_timestamps, images, image_timestamps)
 
+
+def create_results_file_structure():
+	if not os.path.exists("results"):
+		os.makedirs("results")
 
 
 def run_test():

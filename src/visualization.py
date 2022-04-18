@@ -75,9 +75,9 @@ def gen_and_save_map(poses, points, name, cell_width, kHitOdds, kMissOdds, dpi, 
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	draw_point_map(ax, poses, points)
 	ax.set_aspect("equal")
-	plt.savefig("%s_map_points.png" % name)
+	plt.savefig("results/%s_map_points.png" % name)
 	draw_path(ax, poses)
-	plt.savefig("%s_map_points_path.png" % name)
+	plt.savefig("results/%s_map_points_path.png" % name)
 	plt.close(fig)
 
 	if not skip_occupancy_grid:
@@ -88,11 +88,11 @@ def gen_and_save_map(poses, points, name, cell_width, kHitOdds, kMissOdds, dpi, 
 		print("Drawing occupancy grid...")
 		fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 		draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
-		plt.savefig("%s_map_og.png" % name)
+		plt.savefig("results/%s_map_og.png" % name)
 		draw_path(ax, poses)
-		plt.savefig("%s_map_og_path.png" % name)
+		plt.savefig("results/%s_map_og_path.png" % name)
 		plt.close(fig)
 
-		produce_occupancy_grid.save_image(og, "%s_og.png" % name)
+		produce_occupancy_grid.save_image(og, "results/%s_og.png" % name)
 		if save_map_files:
-			produce_occupancy_grid.save_grid(og, "%s.map" % name, cell_width)
+			produce_occupancy_grid.save_grid(og, "results/%s.map" % name, cell_width)

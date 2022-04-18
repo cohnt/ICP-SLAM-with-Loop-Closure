@@ -24,6 +24,8 @@ odometry, lidar_points = dataloader.parse_lcm_log("./data/EECS_3", load_images=F
 
 # print(len(odometry))
 
+dataloader.create_results_file_structure()
+
 start = 75 # EECS
 # start = 25 # LAB
 cell_width = 0.05
@@ -95,7 +97,7 @@ for i in range(start, len(odometry), skip):
 	
 	# plt.draw()
 	# plt.pause(0.1)
-	plt.savefig("icp_frame%04d.png" % iters)
+	plt.savefig("results/icp_frame%04d.png" % iters)
 	print("Iteration %d, frame %d" % (iters, i))
 
 	# if(iters >= 175): # Use 200 for EECS_3 for now
@@ -131,7 +133,7 @@ while True:
 	visualization.draw_path(ax, pg.poses[:,:2])
 	# plt.draw()
 	# plt.pause(0.1)
-	plt.savefig("optim_fame%04d.png" % iters)
+	plt.savefig("results/optim_fame%04d.png" % iters)
 	print(iters)
 
 	if iters >= max_iters:
@@ -143,10 +145,10 @@ og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(pg.poses, lid
 print("Drawing occupancy grid...")
 fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
-plt.savefig("final_map_og.png")
+plt.savefig("results/final_map_og.png")
 plt.show()
 
 fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 visualization.draw_point_map(ax, pg.poses, lidar_points[:len(pg.poses)])
-plt.savefig("final_map_points.png")
+plt.savefig("results/final_map_points.png")
 plt.show()

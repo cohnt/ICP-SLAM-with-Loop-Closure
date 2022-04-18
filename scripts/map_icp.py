@@ -24,6 +24,8 @@ odometry, lidar_points = dataloader.parse_lcm_log("./data/EECS_3", load_images=F
 
 # print(len(odometry))
 
+dataloader.create_results_file_structure()
+
 start = 75 # EECS
 # start = 25 # LAB
 cell_width = 0.05
@@ -93,7 +95,7 @@ for i in range(start, len(odometry), skip):
 	
 	# plt.draw()
 	# plt.pause(0.1)
-	plt.savefig("iter%04d.png" % iters)
+	plt.savefig("results/iter%04d.png" % iters)
 	print(iters)
 
 	if(iters >= 200): # Use 200 for EECS_3 for now
@@ -106,5 +108,5 @@ og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(corrected_pos
 print("Drawing occupancy grid...")
 fig, ax = plt.subplots()
 visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
-plt.savefig("final_map.png")
+plt.savefig("results/final_map.png")
 plt.show()

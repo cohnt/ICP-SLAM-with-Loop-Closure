@@ -1,5 +1,6 @@
 #######################
 # Fix import issues   #
+import os
 import sys            #
 import traceback
 
@@ -206,6 +207,8 @@ skip_occupancy_grid = args.skip_occupancy_grid
 occupancy_grid_mle = bool(args.occupancy_grid_mle)
 manual_annotation_file = args.manual_loop_closures if args.manual_loop_closures else None
 
+dataloader.create_results_file_structure()
+
 if program_start != "scan_matching":
 	if pose_graph_fname is None:
 		print("Error: If starting after scan matching, a pose graph must be passed in using the command line option --pose-graph.")
@@ -252,23 +255,23 @@ if program_start == "scan_matching":
 				pc = (utils.pose_to_mat(corrected_poses[i]) @ pc_raw.T).T
 				pc = pc[::image_pointcloud_downsample]
 				ax.scatter(pc[:,0], pc[:,1], color="red", s=0.1)
-				
+
 				visualization.draw_path(ax, corrected_poses[:i])
 				ax.set_aspect("equal")
-				plt.savefig("icp_frame%04d.png" % i)
+				plt.savefig("results/icp_frame%04d.png" % i)
 			plt.close(fig)
 
 		visualization.gen_and_save_map(corrected_poses, lidar_points, "icp", cell_width, kHitOdds, kMissOdds, dpi,
 			figsize=figsize, save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid, mle=occupancy_grid_mle)
 		pg = pose_graph.PoseGraph(corrected_poses)
-		pg.save("icp_pose_graph.pickle")
-		pg.export_g2o("icp_pose_graph.g2o")
+		pg.save("results/icp_pose_graph.pickle")
+		pg.export_g2o("results/icp_pose_graph.g2o")
 	else:
 		# (Not using ICP)
 		corrected_poses = odometry.copy()
 		pg = pose_graph.PoseGraph(corrected_poses)
-		pg.save("odometry_pose_graph.pickle")
-		pg.export_g2o("odometry_pose_graph.g2o")
+		pg.save("results/odometry_pose_graph.pickle")
+		pg.export_g2o("results/odometry_pose_graph.g2o")
 
 if program_end == "scan_matching":
 	exit(0)
@@ -292,17 +295,17 @@ if program_start == "scan_matching" or program_start == "loop_closure":
 			pc_i = np.c_[lidar_points[i], np.ones(len(lidar_points[i]))]
 			pc_j = np.c_[lidar_points[j], np.ones(len(lidar_points[j]))]
 			tfs, error = icp.icp(pc_i, pc_j, init_transform=estimated_tf, max_iters=100, epsilon=0.05)
-			if error < 1:
+			if error < 30:
 				pg.add_constraint(i, j, tfs[-1])
 
-	pg.save("loop_closure_pose_graph.pickle")
-	pg.export_g2o("loop_closure_pose_graph.g2o")
+	pg.save("results/loop_closure_pose_graph.pickle")
+	pg.export_g2o("results/loop_closure_pose_graph.g2o")
 
 	fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 	visualization.draw_pose_graph(ax, pg)
 	visualization.draw_path(ax, pg.poses[:, :2])
 	ax.set_aspect("equal")
-	plt.savefig("init_pose_graph.png")
+	plt.savefig("results/init_pose_graph.png")
 
 
 if program_end == "loop_closure":
@@ -317,15 +320,15 @@ if program_start == "scan_matching" or program_start == "loop_closure" or progra
 		visualization.draw_pose_graph(ax, pg, draw_orientation=False)
 		visualization.draw_path(ax, pg.poses[:,:2])
 		ax.set_aspect("equal")
-		plt.savefig("optim_fame%04d.png" % iters)
+		plt.savefig("results/optim_fame%04d.png" % iters)
 	plt.close(fig)
 	print("Recomputing pose orientations")
 	pose_graph_optimization.recompute_pose_graph_orientation(pg, lidar_points, icp_max_iters, icp_epsilon, n_jobs)
 
 	visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi, figsize=figsize,
 		save_map_files=save_map_files, skip_occupancy_grid=skip_occupancy_grid, mle=occupancy_grid_mle)
-	pg.save("optim.pickle")
-	pg.export_g2o("optim.g2o")
+	pg.save("results/optim.pickle")
+	pg.export_g2o("results/optim.g2o")
 
 if program_end == "optimization":
 	exit(0)

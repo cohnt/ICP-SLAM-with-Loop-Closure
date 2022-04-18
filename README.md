@@ -12,6 +12,8 @@ Run Project using `python3 scripts/main.py [dataset]`
 
 Example: `python3 scripts/main.py data/EECS_3`
 
+Output figures and graphs will be put in the `results` directory. 
+
 Only tested on linux systems, not guaranteed to work on others.
 
 Our data is available and can be downloaded [here](https://drive.google.com/file/d/1qGzgRRcm359d6GkbtW03Fi-nL-1w8Kku/view?usp=sharing)

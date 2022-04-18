@@ -25,6 +25,8 @@ print("Loading the data...")
 odometry, lidar_points, images = dataloader.parse_lcm_log("./data/EECS_6", load_images=True, image_stop=np.inf)
 print("Done!")
 
+dataloader.create_results_file_structure()
+
 start = 11
 dpi = 100
 cell_width = 0.05
@@ -42,7 +44,7 @@ loop_closure_detection.detect_images_direct_similarity(pg, lidar_points, images,
 fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 visualization.draw_pose_graph(ax, pg)
 visualization.draw_path(ax, odometry[:,:2])
-# plt.savefig("init_pose_graph.png")
+# plt.savefig("results/init_pose_graph.png")
 plt.show()
 
 print("Optimizing pose graph...")
@@ -55,7 +57,7 @@ for iters in tqdm(range(max_iters)):
 	visualization.draw_path(ax, pg.poses[:,:2])
 	plt.draw()
 	plt.pause(0.1)
-	# plt.savefig("optim_fame%04d.png" % iters)
+	# plt.savefig("results/optim_fame%04d.png" % iters)
 plt.close(fig)
 
 print("Recorded %d poses. Creating occupancy grid..." % len(pg.poses))
@@ -63,10 +65,10 @@ og, (min_x, min_y) = produce_occupancy_grid.produce_occupancy_grid(pg.poses, lid
 print("Drawing occupancy grid...")
 fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 visualization.draw_occupancy_grid(ax, og, cell_size=cell_width, origin_location=np.array([min_x, min_y]))
-# plt.savefig("final_map_og.png")
+# plt.savefig("results/final_map_og.png")
 plt.show()
 
 fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=dpi)
 visualization.draw_point_map(ax, pg.poses, lidar_points[:len(pg.poses)])
-# plt.savefig("final_map_points.png")
+# plt.savefig("results/final_map_points.png")
 plt.show()

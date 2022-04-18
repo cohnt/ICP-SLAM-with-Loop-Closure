@@ -76,7 +76,7 @@ for i in tqdm(range(len(corrected_poses), len(odometry))):
 	
 	# plt.draw()
 	# plt.pause(0.1)
-	plt.savefig("icp_frame%04d.png" % i)
+	plt.savefig("results/icp_frame%04d.png" % i)
 
 # plt.close(fig)
 
@@ -103,7 +103,7 @@ for iters in tqdm(range(max_iters)):
 	visualization.draw_path(ax, pg.poses[:,:2])
 	# plt.draw()
 	# plt.pause(0.1)
-	plt.savefig("optim_fame%04d.png" % iters)
+	plt.savefig("results/optim_fame%04d.png" % iters)
 plt.close(fig)
 
 visualization.gen_and_save_map(pg.poses, lidar_points, "final", cell_width, kHitOdds, kMissOdds, dpi)
