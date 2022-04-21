@@ -153,11 +153,11 @@ parser.add_argument("--image-pointcloud-downsample", default=10, type=int,
 parser.add_argument("--min-dist-along-path", default=5, type=int,
  help="The minimum traveled distance to add a loop closure between two poses (default: 5)."
 )
-parser.add_argument("--save-matches", action="store_true",
- help="Store images of each loop closure match identified."
+parser.add_argument("--no-save-matches", action="store_true",
+ help="Don't store images of each loop closure match identified. (Saves the images by default.)"
 )
-parser.add_argument("--save-dist-mat", action="store_true",
- help="Store a plot of the loop closure image distance matrix."
+parser.add_argument("--no-save-dist-mat", action="store_true",
+ help="Don't store a plot of the loop closure image distance matrix. (Saves the plot by default.)"
 )
 parser.add_argument("--save-map-files", action="store_true",
  help="Expore occupancy grid maps as .map files, for use with the robot."
@@ -207,8 +207,8 @@ image_pointcloud_downsample = args.image_pointcloud_downsample
 pose_graph_fname = args.pose_graph
 min_dist_along_path = args.min_dist_along_path
 loop_closure_icp_error = args.loop_closure_icp_error
-save_matches = bool(args.save_matches)
-save_dist_mat = bool(args.save_dist_mat)
+save_matches = not bool(args.no_save_matches)
+save_dist_mat = not bool(args.no_save_dist_mat)
 save_map_files = bool(args.save_map_files)
 optimization_max_iters = args.optimization_max_iters
 skip_occupancy_grid = args.skip_occupancy_grid
