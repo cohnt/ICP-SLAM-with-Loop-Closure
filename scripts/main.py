@@ -27,7 +27,8 @@ except Exception as e:
 	traceback.print_exc()
 	exit(1)
 
-with open("cmd.txt", "w") as cmd_file:
+dataloader.create_results_file_structure()
+with open("results/cmd.txt", "w") as cmd_file:
 	cmd_file.write("Test run with the command:\n")
 	cmd_file.write("python3 " + " ".join(sys.argv))
 
@@ -215,8 +216,6 @@ skip_occupancy_grid = args.skip_occupancy_grid
 occupancy_grid_mle = bool(args.occupancy_grid_mle)
 manual_annotation_file = args.manual_loop_closures if args.manual_loop_closures else None
 icp_recompute = bool(args.icp_recompute)
-
-dataloader.create_results_file_structure()
 
 if program_start != "scan_matching":
 	if pose_graph_fname is None:
