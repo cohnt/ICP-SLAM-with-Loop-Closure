@@ -87,6 +87,8 @@ def detect_images_direct_similarity(pose_graph, lidar_points, images, image_rate
 	start_idx = np.array([
 		np.searchsorted(dist_traveled, dist_traveled[i]+min_dist_along_path, side="right") for i in range(len(dist_traveled))
 	])
+	start_idx[start_idx == len(start_idx)] = start_idx[start_idx == len(start_idx)] * image_rate
+	start_idx = np.floor(start_idx[::image_rate] / image_rate).astype(int)
 
 	print("Converting to grayscale...")
 	greys = [cv2.cvtColor(np.asarray(image, dtype=np.uint8), cv2.COLOR_RGB2GRAY) for image in images]
