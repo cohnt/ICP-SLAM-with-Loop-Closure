@@ -2,7 +2,7 @@ import os
 import gdown
 import zipfile
 
-data_id = "1qGzgRRcm359d6GkbtW03Fi-nL-1w8Kku"
+data_id = "1iYRNzC5BR6b_JAa8IiEXC04rbiGUxFHg"
 output = "data/data.zip"
 
 gdown.download(id=data_id, output=output, quiet=False)
